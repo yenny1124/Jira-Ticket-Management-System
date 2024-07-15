@@ -1,0 +1,102 @@
+.ticket-list {
+    /* background-color: ivory; */
+    font-family: Arial, sans-serif;
+    text-align: center; /* Center the content */  
+    margin: 20px;
+}
+
+.ticket-list h1 {
+    padding-top: 10px;
+    font-size: 30px;
+    color: #333;
+}
+
+.ticket-list .input-container {
+    /* display: flex; */
+    /* justify-content: center; */
+    /* margin: 10px 0; */
+}
+
+.ticket-list input {
+    padding: 6px;
+    margin: 10px;
+    width: 80%;
+    box-sizing: border-box;
+}
+
+.ticket-list button {
+    padding: 7px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.ticket-list button:hover {
+    background-color: #0056b3;
+}
+
+.ticket-list .more-option-button {
+    font-size: 15px; /* Adjust size as needed */
+    background-color: #007bff;
+    cursor: pointer;
+}
+
+.ticket-list table{
+    width:100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.ticket-list th, .ticket-list td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.ticket-list th {
+    background-color: #f2f2f2;
+    text-align: center;
+}
+
+.ticket-list td.description {
+    text-align: left;
+}
+
+.select-container{
+    display: flex;
+}
+
+.filter-select {
+    height: 30px;
+    width: 30%; /* Adjust the width as needed */
+    margin: 0 110px; /* Center the select component */
+}
+
+.multi-select {
+    width: 50%; /* Adjust the width as needed */
+    margin: 0 -60px /* Center the select component */
+}
+
+.multi-select .react-select__control {
+    min-height: 30px; /* Adjust the height */
+    height: 30px; /* Adjust the height */
+}
+
+.multi-select .react-select__value-container {
+    height: 30px; /* Adjust the height */
+    padding: 0 6px;
+}
+
+.multi-select .react-select__input {
+    margin: 0px;
+}
+
+.multi-select .react-select__indicators {
+    height: 30px; /* Adjust the height */
+}
+
+.multi-select .react-select__menu {
+    width: 80%; /* Adjust the width as needed */
+    margin: 0 auto; /* Center the dropdown menu */
+}
