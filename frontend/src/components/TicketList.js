@@ -19,6 +19,8 @@ const columnOptions = [
     { value: 'components', label: 'Components' },
     { value: 'targetrelease', label: 'Target Release' },
     { value: 'targetversion', label: 'Target Version' },
+    { value: 'SRnumber', label: 'SR Number' },
+    { value: 'salesforceCR', label: 'SalesForce CR' },
 ];
 
 const filters = [
@@ -193,9 +195,11 @@ const TicketList = () => {
                 type="text"
                 value={jql}
                 onChange={(e) => setJql(e.target.value)}
+                className='search-input'
                 placeholder="Enter search query"
             />
-            <button onClick={handleSearch}>Search</button>
+            <button 
+                onClick={handleSearch}>Search</button>
         </div>
         {/* Form to add comment */}
         <form onSubmit={handleAddCommenttoEachFilter}>
@@ -206,6 +210,7 @@ const TicketList = () => {
                     id="selectedFilterQuery"
                     value={jql}
                     onChange={(e) => setJql(e.target.value)}
+                    className='search-input'
                     placeholder="Enter jql query"
                 />
             </div>
@@ -215,10 +220,11 @@ const TicketList = () => {
                     id="comment"
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
+                    className='comment-input'
                     placeholder="Enter your comment"
                 />
+                <button type="submit">Add Comment</button>
             </div>
-            <button type="submit">Add Comment</button>
         </form>
         {successMessage && <p>{successMessage}</p>}
         {error && <p>Error: {error}</p>}
@@ -307,6 +313,10 @@ const TicketList = () => {
                                         ); 
                                     case 'targetversion':
                                         return <td key={col.value}>{ticket.fields.customfield_11200}</td>;
+                                    case 'SRnumber':
+                                        return <td key={col.value}>{ticket.fields.customfield_17643}</td>;
+                                    case 'salesforceCR':
+                                        return <td key={col.value}>{ticket.fields.customfield_17687}</td>;
                                     default:
                                         return null;
                                 }

@@ -30,7 +30,7 @@ app.get('/api/tickets', async (req, res) => {
     try {
         while (allIssues.length < MAX_FETCHED_ISSUES) {
             const encodedJql = encodeURIComponent(jqlQuery);
-            const url = `${JIRA_URL}/rest/api/2/search?jql=${encodedJql}&startAt=${startAt}&maxResults=${maxResults}&fields=comment,summary,issuetype,assignee,reporter,status,priority,labels`; // Include comments in the response
+            const url = `${JIRA_URL}/rest/api/2/search?jql=${encodedJql}&startAt=${startAt}&maxResults=${maxResults}&fields=*all`; // Include all fields in the response
 
             console.log(`Making GET request to URL: ${url}`);
             const response = await axios.get(url, {

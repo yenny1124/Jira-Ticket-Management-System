@@ -11,13 +11,20 @@
     color: #333;
 }
 
-.ticket-list .input-container {
-    /* display: flex; */
-    /* justify-content: center; */
-    /* margin: 10px 0; */
+/* .ticket-list .input-container {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+} */
+
+.ticket-list .search-input {
+    padding: 6px;
+    margin: 10px;
+    width: 80%;
+    box-sizing: border-box;
 }
 
-.ticket-list input {
+.ticket-list .comment-input {
     padding: 6px;
     margin: 10px;
     width: 80%;
