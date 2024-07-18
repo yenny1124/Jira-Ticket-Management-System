@@ -269,6 +269,7 @@ app.put('/api/tickets/updateTargetVersion', async (req, res) => {
 });
 
 
+
 // Update “SR Number (customfield_17643)” field in tickets using a PUT request
 app.put('/api/tickets/updateSRnumber', async (req, res) => {
     const jqlQuery = req.query.jql || 'project = LS'; // Use the JQL query from the request
