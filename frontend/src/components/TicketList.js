@@ -169,7 +169,7 @@ const TicketList = () => {
 
   return (
     <div className="ticket-list">
-        <h1>Jira Ticket Management System</h1>
+        <h1>Landslide Jira Management Automation System</h1>
         {/* Dropdown for filters & columns */}
         <div className='select-container'>
             <Select
@@ -312,7 +312,13 @@ const TicketList = () => {
                                             </td>
                                         ); 
                                     case 'targetversion':
-                                        return <td key={col.value}>{ticket.fields.customfield_11200}</td>;
+                                        return (
+                                            <td key={col.value}>
+                                                {ticket.fields.customfield_11200 && ticket.fields.customfield_11200.length > 0
+                                                    ? ticket.fields.customfield_11200.map(customfield_11200 => customfield_11200.name).join(', ')
+                                                    : ''}
+                                            </td>
+                                        );
                                     case 'SRnumber':
                                         return <td key={col.value}>{ticket.fields.customfield_17643}</td>;
                                     case 'salesforceCR':
