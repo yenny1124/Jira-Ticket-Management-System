@@ -31,6 +31,41 @@
     box-sizing: border-box;
 }
 
+.ticket-list .components-input {
+    padding: 6px;
+    margin: 10px;
+    width: 80%;
+    box-sizing: border-box;
+}
+
+.ticket-list .targetrelease-input {
+    padding: 6px;
+    margin: 10px;
+    width: 80%;
+    box-sizing: border-box;
+}
+
+.ticket-list .targetversion-input {
+    padding: 6px;
+    margin: 10px;
+    width: 80%;
+    box-sizing: border-box;
+}
+
+.ticket-list .SRnumber-input {
+    padding: 6px;
+    margin: 10px;
+    width: 80%;
+    box-sizing: border-box;
+}
+
+.ticket-list .salesforceCR-input {
+    padding: 6px;
+    margin: 10px;
+    width: 80%;
+    box-sizing: border-box;
+}
+
 .ticket-list button {
     padding: 7px 15px;
     background-color: #007bff;

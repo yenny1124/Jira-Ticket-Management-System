@@ -21,16 +21,29 @@ const columnOptions = [
     { value: 'targetversion', label: 'Target Version' },
     { value: 'SRnumber', label: 'SR Number' },
     { value: 'salesforceCR', label: 'SalesForce CR' },
+    { value: 'productLine/engproj/area', label: 'ProductLine/Eng Proj/Area' },
 ];
 
 const filters = [
-    { name: 'Find Bugs missing CR/SR with JQL', jql: 'project = LS AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) AND ("SR Number"  is EMPTY OR "CR Number"  is EMPTY)' },
-    { name: 'Find Bugs Missing LS Customer with JQL', jql: 'filter = CurrentRelease AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) AND "LS Customer" is EMPTY' },
-    { name: 'Sync Defect with Bug', jql: 'project = LS AND issueFunction in linkedIssuesOf("type=Defect")' },
-    { name: 'Cleanup Defects', jql: 'project = LandSlide AND type=Defect AND "Target Release" is not EMPTY' },
-    { name: 'Cloned Defects not converted to a Bug', jql: 'project = LandSlide AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) AND type=Defect' },
-    { name: 'Tickets without a Primary Component', jql: 'filter = "CurrentRelease" AND status not in (Declined, Published, "Validated/Completed") AND assignee != ebahjat AND component not in ("TAS", "TS", "TC-GUI", "Licensing", "Documentation", "CI", "Mobile App", "Build", "License Tool or Server") AND type != Task AND type != Epic' },
+    // { name: 'Find Bugs missing CR/SR with JQL', jql: 'project = LS AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) AND ("SR Number"  is EMPTY OR "CR Number"  is EMPTY)' },
+    // { name: 'Find Bugs Missing LS Customer with JQL', jql: 'filter = CurrentRelease AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) AND "LS Customer" is EMPTY' },
+    // { name: 'Sync Defect with Bug', jql: 'project = LS AND issueFunction in linkedIssuesOf("type=Defect")' },
+    // { name: 'Cleanup Defects', jql: 'project = LandSlide AND type=Defect AND "Target Release" is not EMPTY' },
+    // { name: 'Cloned Defects not converted to a Bug', jql: 'project = LandSlide AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) AND type=Defect' },
+    // { name: 'Tickets without a Primary Component', jql: 'filter = "CurrentRelease" AND status not in (Declined, Published, "Validated/Completed") AND assignee != ebahjat AND component not in ("TAS", "TS", "TC-GUI", "Licensing", "Documentation", "CI", "Mobile App", "Build", "License Tool or Server") AND type != Task AND type != Epic' },
     { name: 'Test Filter', jql: 'assignee = ychoi' },
+    { name: 'Missing Primary Component', jql: 'filter = CurrentRelease AND status not in (Open, Targeted, Committed, Declined, Published, "Validated/Completed") AND component not in (TAS, TS, TC-GUI, Documentation, CI, "Mobile App", Licensing, Build, "License Tool or Server", System) AND type != Task AND type != Epic' },
+    { name: 'Cloned Defects still Defects', jql: 'filter = CurrentRelease AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) and type =Defect' },
+    { name: 'SR/CR Sync', jql: 'filter = CurrentRelease AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) and ("SR Number" is EMPTY || "CR Number" is EMPTY)' },
+];
+
+const updateFieldOptions = [
+    { value: 'customfield_17644', label: 'Target Release' },
+    { value: 'customfield_11200', label: 'Target Version' },
+    { value: 'components', label: 'Components' },
+    { value: 'customfield_17643', label: 'SR Number' },
+    { value: 'customfield_17687', label: 'Salesforce CR' },
+    { value: 'comment', label: 'Comment' },
 ];
 
 const TicketList = () => {
@@ -40,10 +53,13 @@ const TicketList = () => {
     const [selectedColumns, setSelectedColumns] = useState(columnOptions); // Initially select all columns
     const [selectedFilter, setSelectedFilter] = useState(null);
     const [comment, setComment] = useState(''); // State for comment input
-    const [selectedIssueKey, setSelectedIssueKey] = useState(''); // State for selected issue key
     const [successMessage, setSuccessMessage] = useState('');
-
-
+    const [components, setComponents] = useState(''); // State for components input
+    const [customfield_17644, setCustomfield_17644] = useState(''); // State for targetrelease (customfield_17644) input
+    const [customfield_11200, setCustomfield_11200] = useState(''); // State for targetversion (customfield_11200) input
+    const [customfield_17643, setCustomfield_17643] = useState(''); // State for SR Number (customfield_17643) input
+    const [customfield_17687, setCustomfield_17687] = useState(''); // State for SalesForce CR (customfield_17687) input
+    
     // function to fetch tickets
     const fetchTickets = async (query) => {
         setError(null);
@@ -114,27 +130,6 @@ const TicketList = () => {
         return `${day}/${month}/${year}`;
     };
 
-    // function to add comments 
-    const handleAddComment = async (e) => {
-        e.preventDefault();
-        if (!selectedIssueKey) {
-            setError('Please select an issue key.');
-            return;
-        }
-        if (!comment) {
-            setError('Please enter a comment.');
-            return;
-        }
-        setError(null);
-        try {
-            const response = await axios.post(`http://localhost:5000/api/tickets/issue/${selectedIssueKey}/comment`, { body: comment });
-            console.log('Comment added:', response.data);
-            setComment(''); // Clear the comment input
-        } catch (err) {
-            setError(err.message);
-        }
-    };
-
     // function to add comments
     const handleAddCommenttoEachFilter = async (e) => {
         e.preventDefault();
@@ -154,14 +149,144 @@ const TicketList = () => {
                 }, 
                 {
                     params: { jql },
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+                    headers: {'Content-Type': 'application/json'}
                 }
             );
             console.log('Comment added:', response.data);
             setComment(''); // Clear the comment input
             setSuccessMessage('Comment added successfully!'); // Set success message
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    // function to update components field
+    const handleUpdateComponents = async (e) => {
+        e.preventDefault();
+        if (!jql) {
+            setError('Please select a filter/query');
+            return;
+        }
+        if (!components) {
+            setError('Please enter components.');
+            return;
+        }
+        setError(null);
+        try {
+            const response = await axios.put(`http://localhost:5000/api/tickets/updateComponents`, 
+                { components: components.split(',').map(comp => ({ name: comp.trim() })) }, 
+                { params: { jql }, 
+                    headers: { 'Content-Type': 'application/json' } }
+            );
+            console.log('Components updated:', response.data);
+            setComponents(''); // Clear the components input
+            setSuccessMessage('Components updated successfully!');
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    // function to update targetrelease field
+    const handleUpdateTargetRelease = async (e) => {
+        e.preventDefault();
+        if (!jql) {
+            setError('Please select a filter/query');
+            return;
+        }
+        if (!customfield_17644) {
+            setError('Please enter target release.');
+            return;
+        }
+        setError(null);
+        try {
+            const response = await axios.put(`http://localhost:5000/api/tickets/updateTargetRelease`, 
+                { customfield_17644: customfield_17644.split(',').map(targetRel => ({ name: targetRel.trim() })) }, 
+                { params: { jql }, 
+                    headers: { 'Content-Type': 'application/json' } }
+            );
+            console.log('Target Release updated:', response.data);
+            setCustomfield_17644(''); // Clear the targer release input
+            setSuccessMessage('Target Release updated successfully!');
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    // function to update targetversion field
+    const handleUpdateTargetVersion = async (e) => {
+        e.preventDefault();
+        if (!jql) {
+            setError('Please select a filter/query');
+            return;
+        }
+        if (!customfield_11200) {
+            setError('Please enter target version.');
+            return;
+        }
+        setError(null);
+        try {
+            const response = await axios.put(`http://localhost:5000/api/tickets/updateTargetVersion`, 
+                { customfield_11200: customfield_11200.split(',').map(targetVer => ({ name: targetVer.trim() })) }, 
+                { params: { jql }, 
+                    headers: { 'Content-Type': 'application/json' } }
+            );
+            console.log('Target Version updated:', response.data);
+            setCustomfield_11200(''); // Clear the target version input
+            setSuccessMessage('Target Version updated successfully!');
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    // function to update SR Number field
+    const handleUpdateSRNumber = async (e) => {
+        e.preventDefault();
+        if (!jql) {
+            setError('Please select a filter/query');
+            return;
+        }
+        if (!customfield_17643) {
+            setError('Please enter SR Number.');
+            return;
+        }
+        setError(null);
+        try {
+            const response = await axios.put(`http://localhost:5000/api/tickets/updateSRnumber`, 
+                { customfield_17643: customfield_17643}, 
+                { params: { jql }, 
+                    headers: { 'Content-Type': 'application/json' } 
+                }
+            );
+            console.log('SR Number updated:', response.data);
+            setCustomfield_17643(''); // Clear the SR Number input
+            setSuccessMessage('SR Number updated successfully!');
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    // function to update SalesForce CR field
+    const handleUpdateSalesForceCR  = async (e) => {
+        e.preventDefault();
+        if (!jql) {
+            setError('Please select a filter/query');
+            return;
+        }
+        if (!customfield_17687) {
+            setError('Please enter SalesForce CR.');
+            return;
+        }
+        setError(null);
+        try {
+            const response = await axios.put(`http://localhost:5000/api/tickets/updateSalesForceCR`, 
+                { customfield_17687: customfield_17687}, 
+                { params: { jql }, 
+                    headers: { 'Content-Type': 'application/json' } 
+                }
+            );
+            console.log('SalesForce CR updated:', response.data);
+            setCustomfield_17687(''); // Clear the SalesForce CR input
+            setSuccessMessage('SalesForce CR updated successfully!');
         } catch (err) {
             setError(err.message);
         }
@@ -198,25 +323,25 @@ const TicketList = () => {
                 className='search-input'
                 placeholder="Enter search query"
             />
-            <button 
-                onClick={handleSearch}>Search</button>
+            <button onClick={handleSearch}>Search</button>
+        </div>
+        {/* query input */}
+        <div>
+            <label htmlFor="jqlQuery">Query to update fields:</label>
+            <input
+                type="text"
+                id="selectedFilterQuery"
+                value={jql}
+                onChange={(e) => setJql(e.target.value)}
+                className='search-input'
+                placeholder="Enter jql query"
+            />
         </div>
         {/* Form to add comment */}
         <form onSubmit={handleAddCommenttoEachFilter}>
             <div>
-                <label htmlFor="jqlQuery">Query for Comments:</label>
-                <input
-                    type="text"
-                    id="selectedFilterQuery"
-                    value={jql}
-                    onChange={(e) => setJql(e.target.value)}
-                    className='search-input'
-                    placeholder="Enter jql query"
-                />
-            </div>
-            <div>
                 <label htmlFor="comment">Comment:</label>
-                <textarea
+                <input
                     id="comment"
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
@@ -224,6 +349,81 @@ const TicketList = () => {
                     placeholder="Enter your comment"
                 />
                 <button type="submit">Add Comment</button>
+            </div>
+        </form>
+        {/* Form to update components */}
+        <form onSubmit={handleUpdateComponents}>
+            <div>
+                <label htmlFor="components">Components:</label>
+                <input
+                    type="text"
+                    id="components"
+                    value={components}
+                    onChange={(e) => setComponents(e.target.value)}
+                    className='components-input'
+                    placeholder="Enter components separated by commas"
+                />
+                <button type="submit">Update Components</button>
+            </div>
+        </form>
+        {/* Form to update targetrelease */}
+        <form onSubmit={handleUpdateTargetRelease}>
+            <div>
+                <label htmlFor="targetrelease">Target Release:</label>
+                <input
+                    type="text"
+                    id="targetrelease"
+                    value={customfield_17644}
+                    onChange={(e) => setCustomfield_17644(e.target.value)}
+                    className='targetrelease-input'
+                    placeholder="Enter target release separated by commas"
+                />
+                <button type="submit">Update Target Release</button>
+            </div>
+        </form>
+        {/* Form to update targetversion */}
+        <form onSubmit={handleUpdateTargetVersion}>
+            <div>
+                <label htmlFor="targetversion">Target Version:</label>
+                <input
+                    type="text"
+                    id="targetversion"
+                    value={customfield_11200}
+                    onChange={(e) => setCustomfield_11200(e.target.value)}
+                    className='targetversion-input'
+                    placeholder="Enter target version separated by commas"
+                />
+                <button type="submit">Update Target Version</button>
+            </div>
+        </form>
+        {/* Form to update SR Number */}
+        <form onSubmit={handleUpdateSRNumber}>
+            <div>
+                <label htmlFor="SRnumber">SR Number:</label>
+                <input
+                    type="text"
+                    id="SRnumber"
+                    value={customfield_17643}
+                    onChange={(e) => setCustomfield_17643(e.target.value)}
+                    className='SRnumber-input'
+                    placeholder="Enter SR Number separated by commas"
+                />
+                <button type="submit">Update SR Number</button>
+            </div>
+        </form>
+        {/* Form to update SalesForce CR */}
+        <form onSubmit={handleUpdateSalesForceCR}>
+            <div>
+                <label htmlFor="salesforceCR">SalesForce CR:</label>
+                <input
+                    type="text"
+                    id="salesforceCR"
+                    value={customfield_17687}
+                    onChange={(e) => setCustomfield_17687(e.target.value)}
+                    className='salesforceCR-input'
+                    placeholder="Enter SalesForce CR separated by commas"
+                />
+                <button type="submit">Update SalesForce CR</button>
             </div>
         </form>
         {successMessage && <p>{successMessage}</p>}
@@ -323,6 +523,14 @@ const TicketList = () => {
                                         return <td key={col.value}>{ticket.fields.customfield_17643}</td>;
                                     case 'salesforceCR':
                                         return <td key={col.value}>{ticket.fields.customfield_17687}</td>;
+                                    case 'productLine/engproj/area':
+                                        return (
+                                            <td key={col.value}>
+                                                {ticket.fields.customfield_15028 && ticket.fields.customfield_15028.length > 0
+                                                    ? ticket.fields.customfield_15028.map(customfield_15028 => customfield_15028.value).join(', ')
+                                                    : ''}
+                                            </td>
+                                        );
                                     default:
                                         return null;
                                 }
