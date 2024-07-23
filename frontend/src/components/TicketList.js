@@ -37,13 +37,13 @@ const filters = [
     { name: 'SR/CR Sync', jql: 'filter = CurrentRelease AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) and ("SR Number" is EMPTY || "CR Number" is EMPTY)' },
 ];
 
-const updateFieldOptions = [
-    { value: 'customfield_17644', label: 'Target Release' },
-    { value: 'customfield_11200', label: 'Target Version' },
-    { value: 'components', label: 'Components' },
-    { value: 'customfield_17643', label: 'SR Number' },
-    { value: 'customfield_17687', label: 'Salesforce CR' },
-    { value: 'comment', label: 'Comment' },
+const fieldOptions = [
+    { label: 'Target Release', value: 'customfield_17644' },
+    { label: 'Target Version', value: 'customfield_11200' },
+    { label: 'Components', value: 'components' },
+    { label: 'SR Number', value: 'customfield_17643' },
+    { label: 'Salesforce CR', value: 'customfield_17687' },
+    { label: 'Comment', value: 'comment' },
 ];
 
 const TicketList = () => {
@@ -52,6 +52,7 @@ const TicketList = () => {
     const [error, setError] = useState(null);
     const [selectedColumns, setSelectedColumns] = useState(columnOptions); // Initially select all columns
     const [selectedFilter, setSelectedFilter] = useState(null);
+    const [selectedField, setSelectedField] = useState(null); // ***
     const [comment, setComment] = useState(''); // State for comment input
     const [successMessage, setSuccessMessage] = useState('');
     const [components, setComponents] = useState(''); // State for components input
@@ -59,7 +60,7 @@ const TicketList = () => {
     const [customfield_11200, setCustomfield_11200] = useState(''); // State for targetversion (customfield_11200) input
     const [customfield_17643, setCustomfield_17643] = useState(''); // State for SR Number (customfield_17643) input
     const [customfield_17687, setCustomfield_17687] = useState(''); // State for SalesForce CR (customfield_17687) input
-    
+
     // function to fetch tickets
     const fetchTickets = async (query) => {
         setError(null);
@@ -89,6 +90,11 @@ const TicketList = () => {
         setJql(filterJql); // Set the JQL query in the search bar
         fetchTickets(filterJql);
         setSelectedFilter(null); // Reset the filter to default option
+    };
+
+    // function to handle selecting a field in tickets *** 
+    const handleSelectField = (selectedOption) => {
+        setSelectedField(selectedOption); // Set the selected field
     };
 
     // function to format descriptions
@@ -154,6 +160,7 @@ const TicketList = () => {
             );
             console.log('Comment added:', response.data);
             setComment(''); // Clear the comment input
+            setSelectedField(null); // Reset the selected field combo box
             setSuccessMessage('Comment added successfully!'); // Set success message
         } catch (err) {
             setError(err.message);
@@ -180,6 +187,7 @@ const TicketList = () => {
             );
             console.log('Components updated:', response.data);
             setComponents(''); // Clear the components input
+            setSelectedField(null); // Reset the selected field combo box
             setSuccessMessage('Components updated successfully!');
         } catch (err) {
             setError(err.message);
@@ -202,10 +210,12 @@ const TicketList = () => {
             const response = await axios.put(`http://localhost:5000/api/tickets/updateTargetRelease`, 
                 { customfield_17644: customfield_17644.split(',').map(targetRel => ({ name: targetRel.trim() })) }, 
                 { params: { jql }, 
-                    headers: { 'Content-Type': 'application/json' } }
+                    headers: { 'Content-Type': 'application/json' } 
+                }
             );
             console.log('Target Release updated:', response.data);
             setCustomfield_17644(''); // Clear the targer release input
+            setSelectedField(null); // Reset the selected field combo box
             setSuccessMessage('Target Release updated successfully!');
         } catch (err) {
             setError(err.message);
@@ -232,6 +242,7 @@ const TicketList = () => {
             );
             console.log('Target Version updated:', response.data);
             setCustomfield_11200(''); // Clear the target version input
+            setSelectedField(null); // Reset the selected field combo box
             setSuccessMessage('Target Version updated successfully!');
         } catch (err) {
             setError(err.message);
@@ -259,6 +270,7 @@ const TicketList = () => {
             );
             console.log('SR Number updated:', response.data);
             setCustomfield_17643(''); // Clear the SR Number input
+            setSelectedField(null); // Reset the selected field combo box
             setSuccessMessage('SR Number updated successfully!');
         } catch (err) {
             setError(err.message);
@@ -286,6 +298,7 @@ const TicketList = () => {
             );
             console.log('SalesForce CR updated:', response.data);
             setCustomfield_17687(''); // Clear the SalesForce CR input
+            setSelectedField(null); // Reset the selected field combo box
             setSuccessMessage('SalesForce CR updated successfully!');
         } catch (err) {
             setError(err.message);
@@ -304,7 +317,7 @@ const TicketList = () => {
                 className="filter-select"
                 placeholder="Select a filter"
                 isClearable
-                />
+            />
             <Select
                 isMulti
                 options={columnOptions}
@@ -325,107 +338,118 @@ const TicketList = () => {
             />
             <button onClick={handleSearch}>Search</button>
         </div>
-        {/* query input */}
-        <div>
-            <label htmlFor="jqlQuery">Query to update fields:</label>
-            <input
-                type="text"
-                id="selectedFilterQuery"
-                value={jql}
-                onChange={(e) => setJql(e.target.value)}
-                className='search-input'
-                placeholder="Enter jql query"
+        {/* Dropdown for field */}
+        <div className='field-container'>
+            <Select
+                options={fieldOptions}
+                value={selectedField}
+                onChange={handleSelectField}
+                className="field-select"
+                placeholder="Select a field to update"
+                isClearable
             />
         </div>
         {/* Form to add comment */}
-        <form onSubmit={handleAddCommenttoEachFilter}>
-            <div>
-                <label htmlFor="comment">Comment:</label>
-                <input
-                    id="comment"
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    className='comment-input'
-                    placeholder="Enter your comment"
-                />
-                <button type="submit">Add Comment</button>
-            </div>
-        </form>
+        {selectedField?.value === 'comment' && (
+            <form onSubmit={handleAddCommenttoEachFilter}>
+                <div>
+                    <label htmlFor="comment">Comment:</label>
+                    <input
+                        id="comment"
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        className='comment-input'
+                        placeholder="Enter your comment"
+                    />
+                    <button type="submit">Add Comment</button>
+                </div>
+            </form>
+        )}
         {/* Form to update components */}
-        <form onSubmit={handleUpdateComponents}>
-            <div>
-                <label htmlFor="components">Components:</label>
-                <input
-                    type="text"
-                    id="components"
-                    value={components}
-                    onChange={(e) => setComponents(e.target.value)}
-                    className='components-input'
-                    placeholder="Enter components separated by commas"
-                />
-                <button type="submit">Update Components</button>
-            </div>
-        </form>
+        {selectedField?.value === 'components' && (
+            <form onSubmit={handleUpdateComponents}>
+                <div>
+                    <label htmlFor="components">Components:</label>
+                    <input
+                        type="text"
+                        id="components"
+                        value={components}
+                        onChange={(e) => setComponents(e.target.value)}
+                        className='components-input'
+                        placeholder="Enter components separated by commas"
+                    />
+                    <button type="submit">Update Components</button>
+                </div>
+            </form>
+        )}
         {/* Form to update targetrelease */}
-        <form onSubmit={handleUpdateTargetRelease}>
-            <div>
-                <label htmlFor="targetrelease">Target Release:</label>
-                <input
-                    type="text"
-                    id="targetrelease"
-                    value={customfield_17644}
-                    onChange={(e) => setCustomfield_17644(e.target.value)}
-                    className='targetrelease-input'
-                    placeholder="Enter target release separated by commas"
-                />
-                <button type="submit">Update Target Release</button>
-            </div>
-        </form>
+        {selectedField?.value === 'customfield_17644' && (
+            <form onSubmit={handleUpdateTargetRelease}>
+                <div>
+                    <label htmlFor="targetrelease">Target Release:</label>
+                    <input
+                        type="text"
+                        id="targetrelease"
+                        value={customfield_17644}
+                        onChange={(e) => setCustomfield_17644(e.target.value)}
+                        className='targetrelease-input'
+                        placeholder="Enter target release separated by commas"
+                    />
+                    <button type="submit">Update Target Release</button>
+                </div>
+            </form>
+        )}
         {/* Form to update targetversion */}
-        <form onSubmit={handleUpdateTargetVersion}>
-            <div>
-                <label htmlFor="targetversion">Target Version:</label>
-                <input
-                    type="text"
-                    id="targetversion"
-                    value={customfield_11200}
-                    onChange={(e) => setCustomfield_11200(e.target.value)}
-                    className='targetversion-input'
-                    placeholder="Enter target version separated by commas"
-                />
-                <button type="submit">Update Target Version</button>
-            </div>
-        </form>
+        {selectedField?.value === 'customfield_11200' && (
+            <form onSubmit={handleUpdateTargetVersion}>
+                <div>
+                    <label htmlFor="targetversion">Target Version:</label>
+                    <input
+                        type="text"
+                        id="targetversion"
+                        value={customfield_11200}
+                        onChange={(e) => setCustomfield_11200(e.target.value)}
+                        className='targetversion-input'
+                        placeholder="Enter target version separated by commas"
+                    />
+                    <button type="submit">Update Target Version</button>
+                </div>
+            </form>
+        )}
         {/* Form to update SR Number */}
-        <form onSubmit={handleUpdateSRNumber}>
-            <div>
-                <label htmlFor="SRnumber">SR Number:</label>
-                <input
-                    type="text"
-                    id="SRnumber"
-                    value={customfield_17643}
-                    onChange={(e) => setCustomfield_17643(e.target.value)}
-                    className='SRnumber-input'
-                    placeholder="Enter SR Number separated by commas"
-                />
-                <button type="submit">Update SR Number</button>
-            </div>
-        </form>
+        {selectedField?.value === 'customfield_17643' && (
+            <form onSubmit={handleUpdateSRNumber}>
+                <div>
+                    <label htmlFor="SRnumber">SR Number:</label>
+                    <input
+                        type="text"
+                        id="SRnumber"
+                        value={customfield_17643}
+                        onChange={(e) => setCustomfield_17643(e.target.value)}
+                        className='SRnumber-input'
+                        placeholder="Enter SR Number"
+                    />
+                    <button type="submit">Update SR Number</button>
+                </div>
+            </form>
+        )}
         {/* Form to update SalesForce CR */}
-        <form onSubmit={handleUpdateSalesForceCR}>
-            <div>
-                <label htmlFor="salesforceCR">SalesForce CR:</label>
-                <input
-                    type="text"
-                    id="salesforceCR"
-                    value={customfield_17687}
-                    onChange={(e) => setCustomfield_17687(e.target.value)}
-                    className='salesforceCR-input'
-                    placeholder="Enter SalesForce CR separated by commas"
-                />
-                <button type="submit">Update SalesForce CR</button>
-            </div>
-        </form>
+        {selectedField?.value === 'customfield_17687' && (
+            <form onSubmit={handleUpdateSalesForceCR}>
+                <div>
+                    <label htmlFor="salesforceCR">SalesForce CR:</label>
+                    <input
+                        type="text"
+                        id="salesforceCR"
+                        value={customfield_17687}
+                        onChange={(e) => setCustomfield_17687(e.target.value)}
+                        className='salesforceCR-input'
+                        placeholder="Enter SalesForce CR"
+                    />
+                    <button type="submit">Update SalesForce CR</button>
+                </div>
+            </form>
+        )}
         {successMessage && <p>{successMessage}</p>}
         {error && <p>Error: {error}</p>}
         {/* Table for columns by dropdown */}
