@@ -323,21 +323,17 @@ const TicketList = () => {
                 placeholder="Select a filter"
                 isClearable
             />
-            <DropdownButton id="dropdown-basic-button" title="Columns">
-                    {columnOptions.map(option => (
-                        <Dropdown.Item
-                            key={option.value}
-                            onClick={() => handleColumnChange(option.value)}
-                        >
-                            <input
-                                type="checkbox"
-                                checked={selectedColumns.includes(option.value)}
-                                onChange={() => handleColumnChange(option.value)}
-                            />
-                            {option.label}
-                        </Dropdown.Item>
-                    ))}
-            </DropdownButton>
+            {/* Search bar */}
+            <div className="input-container">
+                <input
+                    type="text"
+                    value={jql}
+                    onChange={(e) => setJql(e.target.value)}
+                    className='search-input'
+                    placeholder="Enter search query"
+                />
+                <button onClick={handleSearch}>Search</button>
+            </div>
         </div>
         <div className='container2'>
             {/* Dropdown for field */}
@@ -351,23 +347,11 @@ const TicketList = () => {
                     isClearable
                 />
             </div>
-            {/* Search bar */}
-            <div className="input-container">
-                <input
-                    type="text"
-                    value={jql}
-                    onChange={(e) => setJql(e.target.value)}
-                    className='search-input'
-                    placeholder="Enter search query"
-                />
-                <button onClick={handleSearch}>Search</button>
-            </div>
-        </div>
             {/* Form to add comment */}
             {selectedField?.value === 'comment' && (
             <form onSubmit={handleAddCommenttoEachFilter}>
                 <div>
-                    <label htmlFor="comment">Comment:</label>
+                    <label htmlFor="comment"></label>
                     <input
                         id="comment"
                         value={comment}
@@ -378,12 +362,12 @@ const TicketList = () => {
                     <button type="submit">Add Comment</button>
                 </div>
             </form>
-        )}
-        {/* Form to update components */}
-        {selectedField?.value === 'components' && (
+            )}
+            {/* Form to update components */}
+            {selectedField?.value === 'components' && (
             <form onSubmit={handleUpdateComponents}>
                 <div>
-                    <label htmlFor="components">Components:</label>
+                    <label htmlFor="components"></label>
                     <input
                         type="text"
                         id="components"
@@ -395,12 +379,12 @@ const TicketList = () => {
                     <button type="submit">Update Components</button>
                 </div>
             </form>
-        )}
-        {/* Form to update targetrelease */}
-        {selectedField?.value === 'customfield_17644' && (
+            )}
+            {/* Form to update targetrelease */}
+            {selectedField?.value === 'customfield_17644' && (
             <form onSubmit={handleUpdateTargetRelease}>
                 <div>
-                    <label htmlFor="targetrelease">Target Release:</label>
+                    <label htmlFor="targetrelease"></label>
                     <input
                         type="text"
                         id="targetrelease"
@@ -412,12 +396,12 @@ const TicketList = () => {
                     <button type="submit">Update Target Release</button>
                 </div>
             </form>
-        )}
-        {/* Form to update targetversion */}
-        {selectedField?.value === 'customfield_11200' && (
+            )}
+            {/* Form to update targetversion */}
+            {selectedField?.value === 'customfield_11200' && (
             <form onSubmit={handleUpdateTargetVersion}>
                 <div>
-                    <label htmlFor="targetversion">Target Version:</label>
+                    <label htmlFor="targetversion"></label>
                     <input
                         type="text"
                         id="targetversion"
@@ -429,12 +413,12 @@ const TicketList = () => {
                     <button type="submit">Update Target Version</button>
                 </div>
             </form>
-        )}
-        {/* Form to update SR Number */}
-        {selectedField?.value === 'customfield_17643' && (
+            )}
+            {/* Form to update SR Number */}
+            {selectedField?.value === 'customfield_17643' && (
             <form onSubmit={handleUpdateSRNumber}>
                 <div>
-                    <label htmlFor="SRnumber">SR Number:</label>
+                    <label htmlFor="SRnumber"></label>
                     <input
                         type="text"
                         id="SRnumber"
@@ -446,12 +430,12 @@ const TicketList = () => {
                     <button type="submit">Update SR Number</button>
                 </div>
             </form>
-        )}
-        {/* Form to update SalesForce CR */}
-        {selectedField?.value === 'customfield_17687' && (
+            )}
+            {/* Form to update SalesForce CR */}
+            {selectedField?.value === 'customfield_17687' && (
             <form onSubmit={handleUpdateSalesForceCR}>
                 <div>
-                    <label htmlFor="salesforceCR">SalesForce CR:</label>
+                    <label htmlFor="salesforceCR"></label>
                     <input
                         type="text"
                         id="salesforceCR"
@@ -463,7 +447,24 @@ const TicketList = () => {
                     <button type="submit">Update SalesForce CR</button>
                 </div>
             </form>
-        )}
+            )}
+            {/* Dropdown for columns */}
+            <DropdownButton id="dropdown-basic-button" title="Columns" className='dropdown-columns'>
+                {columnOptions.map(option => (
+                    <Dropdown.Item
+                        key={option.value}
+                        onClick={() => handleColumnChange(option.value)}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={selectedColumns.includes(option.value)}
+                            onChange={() => handleColumnChange(option.value)}
+                        />
+                        {option.label}
+                    </Dropdown.Item>
+                ))}
+            </DropdownButton>
+        </div>
         {successMessage && <p>{successMessage}</p>}
         {error && <p>Error: {error}</p>}
         {/* Table for columns by dropdown */}

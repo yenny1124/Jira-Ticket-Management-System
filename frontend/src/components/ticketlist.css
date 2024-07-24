@@ -17,9 +17,15 @@
     justify-content: center;
 }
 
-.filter-select {
-    height: 30px;
-    width: 50%; 
+.container1 .filter-select {
+    height: 40px;
+    width: 20%; 
+    padding-right: 10px;
+}
+
+.container1 .search-input {
+    padding: 6px;
+    width: 500px;
 }
 
 .multi-select {
@@ -54,23 +60,18 @@
     display: flex;
     padding-top: 10px;
     justify-content: center;
+    align-items: center;
+    position: relative; /* Use position relative to allow absolute positioning within it */
 }
 
-.field-container{
-    display: flex;
+.container2 .dropdown-columns{
+    position: absolute;
+    right: 0; /* Align the dropdown to the right */
 }
 
-.field-container .field-select{
+.container2 .field-select{
     padding-right: 10px;
-}
-
-.input-container {
-    display: flex;
-}
-
-.input-container .search-input {
-    padding: 6px;
-    width: 500px
+    margin: 10px;
 }
 
 .ticket-list .comment-input {
@@ -153,4 +154,5 @@
 .ticket-list td.description {
     text-align: left;
 }
+
 
