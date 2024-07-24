@@ -11,18 +11,19 @@
     color: #333;
 }
 
-.select-container{
+.container1 {
+    padding-top: 10px;
     display: flex;
+    justify-content: center;
 }
 
 .filter-select {
     height: 30px;
     width: 50%; 
-    margin: 0 70px;
 }
 
 .multi-select {
-    width: 50%; /* Adjust the width as needed */
+    width: 40%; /* Adjust the width as needed */
     margin: 0 -60px /* Center the select component */
 }
 
@@ -45,66 +46,72 @@
 }
 
 .multi-select .react-select__menu {
-    width: 80%; /* Adjust the width as needed */
+    width: 50%; /* Adjust the width as needed */
     margin: 0 auto; /* Center the dropdown menu */
+}
+
+.container2 {
+    display: flex;
+    padding-top: 10px;
+    justify-content: center;
 }
 
 .field-container{
     display: flex;
 }
 
-.field-select {
-    height: 30px;
-    width: 50%; 
-    margin: 0 400px;
+.field-container .field-select{
+    padding-right: 10px;
 }
 
-.ticket-list .search-input {
+.input-container {
+    display: flex;
+}
+
+.input-container .search-input {
     padding: 6px;
-    margin: 10px;
-    width: 80%;
-    box-sizing: border-box;
+    width: 500px
 }
 
 .ticket-list .comment-input {
     padding: 6px;
     margin: 10px;
-    width: 50%;
+    width: 500px;
     box-sizing: border-box;
 }
 
 .ticket-list .components-input {
     padding: 6px;
     margin: 10px;
-    width: 50%;
+    width: 500px;
     box-sizing: border-box;
 }
 
 .ticket-list .targetrelease-input {
     padding: 6px;
     margin: 10px;
-    width: 50%;
+    width: 500px;
     box-sizing: border-box;
 }
 
 .ticket-list .targetversion-input {
     padding: 6px;
     margin: 10px;
-    width: 50%;
+    width: 500px;
     box-sizing: border-box;
 }
 
 .ticket-list .SRnumber-input {
     padding: 6px;
     margin: 10px;
-    width: 50%;
+    width: 300px;
     box-sizing: border-box;
 }
 
 .ticket-list .salesforceCR-input {
     padding: 6px;
     margin: 10px;
-    width: 50%;
+    width: 300px;
     box-sizing: border-box;
 }
 

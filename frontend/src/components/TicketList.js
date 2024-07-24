@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Select from 'react-select';
+import Dropdown from 'react-bootstrap/Dropdown';
+import DropdownButton from 'react-bootstrap/DropdownButton';
 import './ticketlist.css';
 
 const columnOptions = [
@@ -50,7 +52,7 @@ const TicketList = () => {
     const [tickets, setTickets] = useState([]);
     const [jql, setJql] = useState('project = LS'); // Default JQL query
     const [error, setError] = useState(null);
-    const [selectedColumns, setSelectedColumns] = useState(columnOptions); // Initially select all columns
+    const [selectedColumns, setSelectedColumns] = useState(columnOptions.map(option => option.value));; // Initially select all columns
     const [selectedFilter, setSelectedFilter] = useState(null);
     const [selectedField, setSelectedField] = useState(null); // ***
     const [comment, setComment] = useState(''); // State for comment input
@@ -79,9 +81,12 @@ const TicketList = () => {
         fetchTickets(jql);
     };
 
-    // function to handle seleting columns
-    const handleColumnChange = (selectedOptions) => {
-        setSelectedColumns(selectedOptions);
+    // function to handle selecting columns
+    const handleColumnChange = (columnValue) => {
+        const updatedColumns = selectedColumns.includes(columnValue)
+            ? selectedColumns.filter(col => col !== columnValue)
+            : [...selectedColumns, columnValue];
+        setSelectedColumns(updatedColumns);
     };
 
     // function to handle selecting a filter 
@@ -309,7 +314,7 @@ const TicketList = () => {
     <div className="ticket-list">
         <h1>Landslide Jira Management Automation System</h1>
         {/* Dropdown for filters & columns */}
-        <div className='select-container'>
+        <div className='container1'>
             <Select
                 options={filters.map(filter => ({ value: filter.jql, label: filter.name }))}
                 value={selectedFilter}
@@ -318,39 +323,48 @@ const TicketList = () => {
                 placeholder="Select a filter"
                 isClearable
             />
-            <Select
-                isMulti
-                options={columnOptions}
-                value={selectedColumns}
-                onChange={handleColumnChange}
-                className="multi-select"
-                placeholder="Select columns to display"
-            />
+            <DropdownButton id="dropdown-basic-button" title="Columns">
+                    {columnOptions.map(option => (
+                        <Dropdown.Item
+                            key={option.value}
+                            onClick={() => handleColumnChange(option.value)}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={selectedColumns.includes(option.value)}
+                                onChange={() => handleColumnChange(option.value)}
+                            />
+                            {option.label}
+                        </Dropdown.Item>
+                    ))}
+            </DropdownButton>
         </div>
-        {/* Search bar */}
-        <div className="input-container">
-            <input
-                type="text"
-                value={jql}
-                onChange={(e) => setJql(e.target.value)}
-                className='search-input'
-                placeholder="Enter search query"
-            />
-            <button onClick={handleSearch}>Search</button>
+        <div className='container2'>
+            {/* Dropdown for field */}
+            <div className='field-container'>
+                <Select
+                    options={fieldOptions}
+                    value={selectedField}
+                    onChange={handleSelectField}
+                    className="field-select"
+                    placeholder="Select a field to update"
+                    isClearable
+                />
+            </div>
+            {/* Search bar */}
+            <div className="input-container">
+                <input
+                    type="text"
+                    value={jql}
+                    onChange={(e) => setJql(e.target.value)}
+                    className='search-input'
+                    placeholder="Enter search query"
+                />
+                <button onClick={handleSearch}>Search</button>
+            </div>
         </div>
-        {/* Dropdown for field */}
-        <div className='field-container'>
-            <Select
-                options={fieldOptions}
-                value={selectedField}
-                onChange={handleSelectField}
-                className="field-select"
-                placeholder="Select a field to update"
-                isClearable
-            />
-        </div>
-        {/* Form to add comment */}
-        {selectedField?.value === 'comment' && (
+            {/* Form to add comment */}
+            {selectedField?.value === 'comment' && (
             <form onSubmit={handleAddCommenttoEachFilter}>
                 <div>
                     <label htmlFor="comment">Comment:</label>
@@ -455,16 +469,18 @@ const TicketList = () => {
         {/* Table for columns by dropdown */}
         <table>
             <thead>
-                <tr>
-                    {selectedColumns.map(col => (
-                        <th key={col.value}>{col.label}</th>
-                    ))}
-                </tr>
+                    <tr>
+                        {selectedColumns.map(colValue => {
+                            const col = columnOptions.find(option => option.value === colValue);
+                            return <th key={col.value}>{col.label}</th>;
+                        })}
+                    </tr>
             </thead>
             <tbody>
                 {tickets.map((ticket) => (
                     <tr key={ticket.id}>
-                            {selectedColumns.map(col => {
+                        {selectedColumns.map(colValue => {
+                                const col = columnOptions.find(option => option.value === colValue);
                                 switch (col.value) {
                                     case 'issuetype':
                                         return <td key={col.value}>{ticket.fields.issuetype?.name}</td>;
