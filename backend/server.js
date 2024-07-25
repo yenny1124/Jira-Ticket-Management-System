@@ -18,7 +18,7 @@ app.get('/', (req, res) => {
     res.send('Welcome to the Jira Ticket Management API. Use /api/tickets to get the tickets.');
 });
 
-// Middleware to fetch tickets
+// Middleware to fetch tickets (should be initialized first before it's used)
 const fetchTicketsMiddleware = async (req, res, next) => {
     const jqlQuery = req.query.jql || 'project = LS'; // Use the JQL query from the request
     const maxResults = parseInt(req.query.maxResults) || 50;
