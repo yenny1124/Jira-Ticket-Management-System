@@ -246,6 +246,108 @@ app.post('/api/tickets/comments', fetchTicketsMiddleware, async (req, res) => {
 });
 
 // Function to sync SR Number from Linked Tickets ***
+app.post('/api/tickets/sync-sr-number', fetchTicketsMiddleware, async (req, res) => {
+    const allIssues = req.fetchedIssues;
+
+    try {
+        for (let issue of allIssues) {
+            if (!issue.fields.customfield_17643) {
+                const linkedIssues = issue.fields.issuelinks;
+
+                if (linkedIssues && linkedIssues.length > 0) {
+                    const outwardIssue = linkedIssues[0]?.outwardIssue;
+
+                    if (outwardIssue) {
+                        const linkedIssueDetails = await fetchIssueDetails(outwardIssue.id);
+
+                        if (linkedIssueDetails && linkedIssueDetails.fields.customfield_17801) {
+                            const srNumber = extractSRCRNumber(linkedIssueDetails.fields.customfield_17801);
+
+                            await updateIssueField(issue.id, { customfield_17643: srNumber });
+                            console.log(`SR Number updated for ticket ${issue.key}: ${srNumber}`);
+                        }
+                    }
+                }
+            }
+        }
+
+        res.status(200).send('SR Number updated successfully!');
+    } catch (err) {
+        console.error('Error syncing SR Number:', err.message);
+        res.status(500).send('Error syncing SR Number');
+    }
+});
+
+// Function to sync CR Number(SalesForce CR) from Linked Tickets ***
+app.post('/api/tickets/sync-cr-number', fetchTicketsMiddleware, async (req, res) => {
+    const allIssues = req.fetchedIssues;
+
+    try {
+        for (let issue of allIssues) {
+            if (!issue.fields.customfield_17687) {
+                const linkedIssues = issue.fields.issuelinks;
+
+                if (linkedIssues && linkedIssues.length > 0) {
+                    const outwardIssue = linkedIssues[0]?.outwardIssue;
+
+                    if (outwardIssue) {
+                        const linkedIssueDetails = await fetchIssueDetails(outwardIssue.id);
+
+                        if (linkedIssueDetails && linkedIssueDetails.fields.customfield_17800) {
+                            const srNumber = extractSRCRNumber(linkedIssueDetails.fields.customfield_17800);
+
+                            await updateIssueField(issue.id, { customfield_17687: srNumber });
+                            console.log(`CR Number(SalesForce CR) updated for ticket ${issue.key}: ${srNumber}`);
+                        }
+                    }
+                }
+            }
+        }
+
+        res.status(200).send('CR Number(SalesForce CR) updated successfully!');
+    } catch (err) {
+        console.error('Error syncing CR Number(SalesForce CR):', err.message);
+        res.status(500).send('Error syncing CR Number(SalesForce CR)');
+    }
+});
+
+// Helper function to extract SR number & CR Number(SalesForce CR) from HTML string, only extract numbers
+const extractSRCRNumber = (htmlString) => {
+    const match = htmlString.match(/>(\d+)</);
+    return match ? match[1] : '';
+};
+
+// Helper function to fetch issue details
+const fetchIssueDetails = async (issueId) => {
+    try {
+        const response = await axios.get(`${JIRA_URL}/rest/api/2/issue/${issueId}`, {
+            headers: {
+                'Authorization': `Bearer ${API_TOKEN}`,
+                'Accept': 'application/json'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching issue ${issueId}:`, error);
+        return null;
+    }
+};
+
+// Helper function to update issue field
+const updateIssueField = async (issueId, fields) => {
+    try {
+        const response = await axios.put(`${JIRA_URL}/rest/api/2/issue/${issueId}`, { fields }, {
+            headers: {
+                'Authorization': `Bearer ${API_TOKEN}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error(`Error updating issue ${issueId}:`, error);
+        return null;
+    }
+};
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
