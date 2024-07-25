@@ -18,11 +18,6 @@ app.get('/', (req, res) => {
     res.send('Welcome to the Jira Ticket Management API. Use /api/tickets to get the tickets.');
 });
 
-// fetching all tickets (By entering JQL query)
-app.get('/api/tickets', fetchTicketsMiddleware, (req, res) => {
-    res.json(req.fetchedIssues);
-});
-
 // Middleware to fetch tickets
 const fetchTicketsMiddleware = async (req, res, next) => {
     const jqlQuery = req.query.jql || 'project = LS'; // Use the JQL query from the request
@@ -70,6 +65,10 @@ const fetchTicketsMiddleware = async (req, res, next) => {
     }
 };
 
+// fetching all tickets (By entering JQL query)
+app.get('/api/tickets', fetchTicketsMiddleware, (req, res) => {
+    res.json(req.fetchedIssues);
+});
 
 // Update “components” field in tickets using a PUT request 
 app.put('/api/tickets/updateComponents', fetchTicketsMiddleware, async (req, res) => {
