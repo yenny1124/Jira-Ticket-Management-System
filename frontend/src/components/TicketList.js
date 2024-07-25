@@ -27,16 +27,10 @@ const columnOptions = [
 ];
 
 const filters = [
-    // { name: 'Find Bugs missing CR/SR with JQL', jql: 'project = LS AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) AND ("SR Number"  is EMPTY OR "CR Number"  is EMPTY)' },
-    // { name: 'Find Bugs Missing LS Customer with JQL', jql: 'filter = CurrentRelease AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) AND "LS Customer" is EMPTY' },
-    // { name: 'Sync Defect with Bug', jql: 'project = LS AND issueFunction in linkedIssuesOf("type=Defect")' },
-    // { name: 'Cleanup Defects', jql: 'project = LandSlide AND type=Defect AND "Target Release" is not EMPTY' },
-    // { name: 'Cloned Defects not converted to a Bug', jql: 'project = LandSlide AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) AND type=Defect' },
-    // { name: 'Tickets without a Primary Component', jql: 'filter = "CurrentRelease" AND status not in (Declined, Published, "Validated/Completed") AND assignee != ebahjat AND component not in ("TAS", "TS", "TC-GUI", "Licensing", "Documentation", "CI", "Mobile App", "Build", "License Tool or Server") AND type != Task AND type != Epic' },
     { name: 'Test Filter', jql: 'assignee = ychoi' },
     { name: 'Missing Primary Component', jql: 'filter = CurrentRelease AND status not in (Open, Targeted, Committed, Declined, Published, "Validated/Completed") AND component not in (TAS, TS, TC-GUI, Documentation, CI, "Mobile App", Licensing, Build, "License Tool or Server", System) AND type != Task AND type != Epic' },
-    { name: 'Cloned Defects still Defects', jql: 'filter = CurrentRelease AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) and type =Defect' },
-    { name: 'SR/CR Sync', jql: 'filter = CurrentRelease AND (issueFunction in linkedIssuesOf(\'type=Defect\', \'is cloned by\')) and ("SR Number" is EMPTY || "CR Number" is EMPTY)' },
+    { name: 'Cloned Defects still Defects', jql: 'filter = CurrentRelease AND (issueFunction in linkedIssuesOf(\"type=Defect\", \"is cloned by\")) and type =Defect' },
+    { name: 'Sync SR/CRs to Bugs', jql: "project = LS AND (issueFunction in linkedIssuesOf(\"type=Defect\", \"is cloned by\")) and (\"SR Number\" is EMPTY OR \"SalesForce CR\" is EMPTY)" },
 ];
 
 const fieldOptions = [

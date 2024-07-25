@@ -19,7 +19,12 @@ app.get('/', (req, res) => {
 });
 
 // fetching all tickets (By entering JQL query)
-app.get('/api/tickets', async (req, res) => {
+app.get('/api/tickets', fetchTicketsMiddleware, (req, res) => {
+    res.json(req.fetchedIssues);
+});
+
+// Middleware to fetch tickets
+const fetchTicketsMiddleware = async (req, res, next) => {
     const jqlQuery = req.query.jql || 'project = LS'; // Use the JQL query from the request
     const maxResults = parseInt(req.query.maxResults) || 50;
     let startAt = 0;
@@ -57,425 +62,194 @@ app.get('/api/tickets', async (req, res) => {
             }
         }
 
-        res.json(allIssues);
+        req.fetchedIssues = allIssues;
+        next();
     } catch (error) {
         console.error(`Error fetching tickets: ${error.message}`); // Log the error message
         res.status(500).json({ error: error.message });
     }
-});
+};
+
 
 // Update “components” field in tickets using a PUT request 
-app.put('/api/tickets/updateComponents', async (req, res) => {
-    const jqlQuery = req.query.jql || 'project = LS'; // Use the JQL query from the request
-    const maxResults = parseInt(req.query.maxResults) || 50;
-    const newComponents = req.body.components; // The new components to be set
-    let startAt = 0;
-    let allIssues = [];
+app.put('/api/tickets/updateComponents', fetchTicketsMiddleware, async (req, res) => {
+    const allIssues = req.fetchedIssues;
 
-    console.log(`Fetching tickets with JQL: ${jqlQuery}`); // Log the JQL query
+    for (const issue of allIssues) {
+        const issueKey = issue.key;
+        const updateUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}`;
+        const updateData = { fields: { components: newComponents } };
 
-    try {
-        while (allIssues.length < MAX_FETCHED_ISSUES) {
-            const encodedJql = encodeURIComponent(jqlQuery);
-            const url = `${JIRA_URL}/rest/api/2/search?jql=${encodedJql}&startAt=${startAt}&maxResults=${maxResults}&fields=*all`;
-
-            console.log(`Making GET request to URL: ${url}`);
-            const response = await axios.get(url, {
+        console.log(`Updating components for ticket with issue key: ${issueKey}`);
+        try {
+            const response = await axios.put(updateUrl, updateData, {
                 headers: {
                     'Authorization': `Bearer ${API_TOKEN}`,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 }
             });
-
-            console.log(`Received response status: ${response.status}`);
-            const jsonNode = response.data;
-            const issues = jsonNode.issues;
-
-            if (!issues || issues.length === 0) {
-                console.log('No more issues found.');
-                break;
-            } else {
-                allIssues = allIssues.concat(issues);
-                console.log(`Fetched ${issues.length} issues, total fetched: ${allIssues.length}`);
-                startAt += maxResults;
-                if (issues.length < maxResults) {
-                    break;
-                }
-            }
+            console.log(`Components updated for ${issueKey}, response status: ${response.status}`);
+        } catch (error) {
+            console.error(`Error updating components for ${issueKey}: ${error.message}`);
+            console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
         }
-
-        for (const issue of allIssues) {
-            const issueKey = issue.key;
-            const updateUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}`;
-            const updateData = { fields: { components: newComponents } };
-
-            console.log(`Updating components for ticket with issue key: ${issueKey}`);
-            try {
-                const response = await axios.put(updateUrl, updateData, {
-                    headers: {
-                        'Authorization': `Bearer ${API_TOKEN}`,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                console.log(`Components updated for ${issueKey}, response status: ${response.status}`);
-            } catch (error) {
-                console.error(`Error updating components for ${issueKey}: ${error.message}`);
-                console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
-            }
-        }
-
-        res.json({ message: 'Components updated for all tickets successfully.' });
-    } catch (error) {
-        console.error(`Error fetching tickets: ${error.message}`); // Log the error message
-        res.status(500).json({ error: error.message });
     }
+
+    res.json({ message: 'Components updated for all tickets successfully.' });
 });
 
 // Update "Target Release (customfield_17644)" field in tickets using a PUT request
-app.put('/api/tickets/updateTargetRelease', async (req, res) => {
-    const jqlQuery = req.query.jql || 'project = LS'; // Use the JQL query from the request
-    const maxResults = parseInt(req.query.maxResults) || 50;
-    const newCustomField17644 = req.body.customfield_17644; // The new value for customfield_17644
-    let startAt = 0;
-    let allIssues = [];
+app.put('/api/tickets/updateTargetRelease', fetchTicketsMiddleware, async (req, res) => {
+    const allIssues = req.fetchedIssues;
+    
+    for (const issue of allIssues) {
+        const issueKey = issue.key;
+        const updateUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}`;
+        const updateData = { fields: { customfield_17644: newCustomField17644 } };
 
-    console.log(`Fetching tickets with JQL: ${jqlQuery}`); // Log the JQL query
-
-    try {
-        while (allIssues.length < MAX_FETCHED_ISSUES) {
-            const encodedJql = encodeURIComponent(jqlQuery);
-            const url = `${JIRA_URL}/rest/api/2/search?jql=${encodedJql}&startAt=${startAt}&maxResults=${maxResults}&fields=*all`;
-
-            console.log(`Making GET request to URL: ${url}`);
-            const response = await axios.get(url, {
+        console.log(`Updating customfield_17644 for ticket with issue key: ${issueKey}`);
+        try {
+            const response = await axios.put(updateUrl, updateData, {
                 headers: {
                     'Authorization': `Bearer ${API_TOKEN}`,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 }
             });
-
-            console.log(`Received response status: ${response.status}`);
-            const jsonNode = response.data;
-            const issues = jsonNode.issues;
-
-            if (!issues || issues.length === 0) {
-                console.log('No more issues found.');
-                break;
-            } else {
-                allIssues = allIssues.concat(issues);
-                console.log(`Fetched ${issues.length} issues, total fetched: ${allIssues.length}`);
-                startAt += maxResults;
-                if (issues.length < maxResults) {
-                    break;
-                }
-            }
+            console.log(`customfield_17644 updated for ${issueKey}, response status: ${response.status}`);
+        } catch (error) {
+            console.error(`Error updating customfield_17644 for ${issueKey}: ${error.message}`);
+            console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
         }
-
-        for (const issue of allIssues) {
-            const issueKey = issue.key;
-            const updateUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}`;
-            const updateData = { fields: { customfield_17644: newCustomField17644 } };
-
-            console.log(`Updating customfield_17644 for ticket with issue key: ${issueKey}`);
-            try {
-                const response = await axios.put(updateUrl, updateData, {
-                    headers: {
-                        'Authorization': `Bearer ${API_TOKEN}`,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                console.log(`customfield_17644 updated for ${issueKey}, response status: ${response.status}`);
-            } catch (error) {
-                console.error(`Error updating customfield_17644 for ${issueKey}: ${error.message}`);
-                console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
-            }
-        }
-
-        res.json({ message: 'customfield_17644 updated for all tickets successfully.' });
-    } catch (error) {
-        console.error(`Error fetching tickets: ${error.message}`); // Log the error message
-        res.status(500).json({ error: error.message });
     }
+
+    res.json({ message: 'customfield_17644 updated for all tickets successfully.' });
+
 });
 
 // Update “Target Version (customfield_11200)” field in tickets using a PUT request 
-app.put('/api/tickets/updateTargetVersion', async (req, res) => {
-    const jqlQuery = req.query.jql || 'project = LS'; // Use the JQL query from the request
-    const maxResults = parseInt(req.query.maxResults) || 50;
-    const newCustomField11200 = req.body.customfield_11200; // The new value for customfield_11200
-    let startAt = 0;
-    let allIssues = [];
+app.put('/api/tickets/updateTargetVersion', fetchTicketsMiddleware, async (req, res) => {
+    const allIssues = req.fetchedIssues;
 
-    console.log(`Fetching tickets with JQL: ${jqlQuery}`); // Log the JQL query
+    for (const issue of allIssues) {
+        const issueKey = issue.key;
+        const updateUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}`;
+        const updateData = { fields: { customfield_11200: newCustomField11200 } };
 
-    try {
-        while (allIssues.length < MAX_FETCHED_ISSUES) {
-            const encodedJql = encodeURIComponent(jqlQuery);
-            const url = `${JIRA_URL}/rest/api/2/search?jql=${encodedJql}&startAt=${startAt}&maxResults=${maxResults}&fields=*all`;
-
-            console.log(`Making GET request to URL: ${url}`);
-            const response = await axios.get(url, {
+        console.log(`Updating customfield_11200 for ticket with issue key: ${issueKey}`);
+        try {
+            const response = await axios.put(updateUrl, updateData, {
                 headers: {
                     'Authorization': `Bearer ${API_TOKEN}`,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 }
             });
-
-            console.log(`Received response status: ${response.status}`);
-            const jsonNode = response.data;
-            const issues = jsonNode.issues;
-
-            if (!issues || issues.length === 0) {
-                console.log('No more issues found.');
-                break;
-            } else {
-                allIssues = allIssues.concat(issues);
-                console.log(`Fetched ${issues.length} issues, total fetched: ${allIssues.length}`);
-                startAt += maxResults;
-                if (issues.length < maxResults) {
-                    break;
-                }
-            }
+            console.log(`customfield_11200 updated for ${issueKey}, response status: ${response.status}`);
+        } catch (error) {
+            console.error(`Error updating customfield_11200 for ${issueKey}: ${error.message}`);
+            console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
         }
-
-        for (const issue of allIssues) {
-            const issueKey = issue.key;
-            const updateUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}`;
-            const updateData = { fields: { customfield_11200: newCustomField11200 } };
-
-            console.log(`Updating customfield_11200 for ticket with issue key: ${issueKey}`);
-            try {
-                const response = await axios.put(updateUrl, updateData, {
-                    headers: {
-                        'Authorization': `Bearer ${API_TOKEN}`,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                console.log(`customfield_11200 updated for ${issueKey}, response status: ${response.status}`);
-            } catch (error) {
-                console.error(`Error updating customfield_11200 for ${issueKey}: ${error.message}`);
-                console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
-            }
-        }
-
-        res.json({ message: 'customfield_11200 updated for all tickets successfully.' });
-    } catch (error) {
-        console.error(`Error fetching tickets: ${error.message}`); // Log the error message
-        res.status(500).json({ error: error.message });
     }
+
+    res.json({ message: 'customfield_11200 updated for all tickets successfully.' });
+
 });
 
 
-
 // Update “SR Number (customfield_17643)” field in tickets using a PUT request
-app.put('/api/tickets/updateSRnumber', async (req, res) => {
-    const jqlQuery = req.query.jql || 'project = LS'; // Use the JQL query from the request
-    const maxResults = parseInt(req.query.maxResults) || 50;
-    const newCustomField17643 = req.body.customfield_17643; // The new value for customfield_17643
-    let startAt = 0;
-    let allIssues = [];
+app.put('/api/tickets/updateSRnumber', fetchTicketsMiddleware, async (req, res) => {
+    const allIssues = req.fetchedIssues;
 
-    console.log(`Fetching tickets with JQL: ${jqlQuery}`); // Log the JQL query
+    for (const issue of allIssues) {
+        const issueKey = issue.key;
+        const updateUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}`;
+        const updateData = { fields: { customfield_17643: newCustomField17643 } };
 
-    try {
-        while (allIssues.length < MAX_FETCHED_ISSUES) {
-            const encodedJql = encodeURIComponent(jqlQuery);
-            const url = `${JIRA_URL}/rest/api/2/search?jql=${encodedJql}&startAt=${startAt}&maxResults=${maxResults}&fields=*all`;
-
-            console.log(`Making GET request to URL: ${url}`);
-            const response = await axios.get(url, {
+        console.log(`Updating customfield_17643 for ticket with issue key: ${issueKey}`);
+        try {
+            const response = await axios.put(updateUrl, updateData, {
                 headers: {
                     'Authorization': `Bearer ${API_TOKEN}`,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 }
             });
-
-            console.log(`Received response status: ${response.status}`);
-            const jsonNode = response.data;
-            const issues = jsonNode.issues;
-
-            if (!issues || issues.length === 0) {
-                console.log('No more issues found.');
-                break;
-            } else {
-                allIssues = allIssues.concat(issues);
-                console.log(`Fetched ${issues.length} issues, total fetched: ${allIssues.length}`);
-                startAt += maxResults;
-                if (issues.length < maxResults) {
-                    break;
-                }
-            }
+            console.log(`customfield_17643 updated for ${issueKey}, response status: ${response.status}`);
+        } catch (error) {
+            console.error(`Error updating customfield_17643 for ${issueKey}: ${error.message}`);
+            console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
         }
-
-        for (const issue of allIssues) {
-            const issueKey = issue.key;
-            const updateUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}`;
-            const updateData = { fields: { customfield_17643: newCustomField17643 } };
-
-            console.log(`Updating customfield_17643 for ticket with issue key: ${issueKey}`);
-            try {
-                const response = await axios.put(updateUrl, updateData, {
-                    headers: {
-                        'Authorization': `Bearer ${API_TOKEN}`,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                console.log(`customfield_17643 updated for ${issueKey}, response status: ${response.status}`);
-            } catch (error) {
-                console.error(`Error updating customfield_17643 for ${issueKey}: ${error.message}`);
-                console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
-            }
-        }
-
-        res.json({ message: 'customfield_17643 updated for all tickets successfully.' });
-    } catch (error) {
-        console.error(`Error fetching tickets: ${error.message}`); // Log the error message
-        res.status(500).json({ error: error.message });
     }
+
+    res.json({ message: 'customfield_17643 updated for all tickets successfully.' });
+
 });
 
 
 // Update “SalesForce CR (customfield_17687)” field in tickets using a PUT request
-app.put('/api/tickets/updateSalesForceCR', async (req, res) => {
-    const jqlQuery = req.query.jql || 'project = LS'; // Use the JQL query from the request
-    const maxResults = parseInt(req.query.maxResults) || 50;
-    const newCustomField17687 = req.body.customfield_17687; // The new value for customfield_17687
-    let startAt = 0;
-    let allIssues = [];
+app.put('/api/tickets/updateSalesForceCR', fetchTicketsMiddleware, async (req, res) => {
+    const allIssues = req.fetchedIssues;
+    
+    for (const issue of allIssues) {
+        const issueKey = issue.key;
+        const updateUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}`;
+        const updateData = { fields: { customfield_17687: newCustomField17687 } };
 
-    console.log(`Fetching tickets with JQL: ${jqlQuery}`); // Log the JQL query
-
-    try {
-        while (allIssues.length < MAX_FETCHED_ISSUES) {
-            const encodedJql = encodeURIComponent(jqlQuery);
-            const url = `${JIRA_URL}/rest/api/2/search?jql=${encodedJql}&startAt=${startAt}&maxResults=${maxResults}&fields=*all`;
-
-            console.log(`Making GET request to URL: ${url}`);
-            const response = await axios.get(url, {
+        console.log(`Updating customfield_17687 for ticket with issue key: ${issueKey}`);
+        try {
+            const response = await axios.put(updateUrl, updateData, {
                 headers: {
                     'Authorization': `Bearer ${API_TOKEN}`,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 }
             });
-
-            console.log(`Received response status: ${response.status}`);
-            const jsonNode = response.data;
-            const issues = jsonNode.issues;
-
-            if (!issues || issues.length === 0) {
-                console.log('No more issues found.');
-                break;
-            } else {
-                allIssues = allIssues.concat(issues);
-                console.log(`Fetched ${issues.length} issues, total fetched: ${allIssues.length}`);
-                startAt += maxResults;
-                if (issues.length < maxResults) {
-                    break;
-                }
-            }
+            console.log(`customfield_17687 updated for ${issueKey}, response status: ${response.status}`);
+        } catch (error) {
+            console.error(`Error updating customfield_17687 for ${issueKey}: ${error.message}`);
+            console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
         }
-
-        for (const issue of allIssues) {
-            const issueKey = issue.key;
-            const updateUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}`;
-            const updateData = { fields: { customfield_17687: newCustomField17687 } };
-
-            console.log(`Updating customfield_17687 for ticket with issue key: ${issueKey}`);
-            try {
-                const response = await axios.put(updateUrl, updateData, {
-                    headers: {
-                        'Authorization': `Bearer ${API_TOKEN}`,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                console.log(`customfield_17687 updated for ${issueKey}, response status: ${response.status}`);
-            } catch (error) {
-                console.error(`Error updating customfield_17687 for ${issueKey}: ${error.message}`);
-                console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
-            }
-        }
-
-        res.json({ message: 'customfield_17687 updated for all tickets successfully.' });
-    } catch (error) {
-        console.error(`Error fetching tickets: ${error.message}`); // Log the error message
-        res.status(500).json({ error: error.message });
     }
+
+    res.json({ message: 'customfield_17687 updated for all tickets successfully.' });
 });
 
 // Adding comments to all tickets fetched by JQL query
 // iterate over the fetched issues and add a comment to each ticket:
-app.post('/api/tickets/comments', async (req, res) => {
-    const jqlQuery = req.query.jql || 'project = LS'; // Use the JQL query from the request
-    const maxResults = parseInt(req.query.maxResults) || 50;
-    const commentBody = req.body.body; // The comment to be added
-    let startAt = 0;
-    let allIssues = [];
+app.post('/api/tickets/comments', fetchTicketsMiddleware, async (req, res) => {
+    const allIssues = req.fetchedIssues;
 
-    console.log(`Fetching tickets with JQL: ${jqlQuery}`); // Log the JQL query
-
-    try {
-        while (allIssues.length < MAX_FETCHED_ISSUES) {
-            const encodedJql = encodeURIComponent(jqlQuery);
-            const url = `${JIRA_URL}/rest/api/2/search?jql=${encodedJql}&startAt=${startAt}&maxResults=${maxResults}&fields=*all`; // Include comments in the response
-
-            console.log(`Making GET request to URL: ${url}`);
-            const response = await axios.get(url, {
+    for (const issue of allIssues) {
+        const issueKey = issue.key;
+        const commentUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}/comment`;
+        const comment = { body: commentBody };
+            
+        console.log(`Adding comment to ticket with issue key: ${issueKey}`);
+        try {
+            const response = await axios.post(commentUrl, comment, {
                 headers: {
                     'Authorization': `Bearer ${API_TOKEN}`,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 }
             });
-
-            console.log(`Received response status: ${response.status}`);
-            const jsonNode = response.data;
-            const issues = jsonNode.issues;
-
-            if (!issues || issues.length === 0) {
-                console.log('No more issues found.');
-                break;
-            } else {
-                allIssues = allIssues.concat(issues);
-                console.log(`Fetched ${issues.length} issues, total fetched: ${allIssues.length}`);
-                startAt += maxResults;
-                if (issues.length < maxResults) {
-                    break;
-                }
-            }
-        } 
-
-        for (const issue of allIssues) {
-            const issueKey = issue.key;
-            const commentUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}/comment`;
-            const comment = { body: commentBody };
-            
-            console.log(`Adding comment to ticket with issue key: ${issueKey}`);
-            try {
-                const response = await axios.post(commentUrl, comment, {
-                    headers: {
-                        'Authorization': `Bearer ${API_TOKEN}`,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                console.log(`Comment added to ${issueKey}, response status: ${response.status}`);
-            } catch (error) {
-                console.error(`Error adding comment to ${issueKey}: ${error.message}`);
-                console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
-            }
+            console.log(`Comment added to ${issueKey}, response status: ${response.status}`);
+        } catch (error) {
+            console.error(`Error adding comment to ${issueKey}: ${error.message}`);
+            console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
         }
-        
-        res.json({ message: 'Comments added to all tickets successfully.' });
-    }catch (error) {
-        console.error(`Error fetching tickets: ${error.message}`); // Log the error message
-        res.status(500).json({ error: error.message });
     }
+        
+    res.json({ message: 'Comments added to all tickets successfully.' });
+
 });
+
+// Function to sync SR Number from Linked Tickets ***
 
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+    console.log(`Server is running on port ${port}`);
 });
+
+
