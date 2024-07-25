@@ -245,6 +245,44 @@ app.post('/api/tickets/comments', fetchTicketsMiddleware, async (req, res) => {
 
 });
 
+// Function to sync SR Number and CR Number from Linked Tickets ***
+app.post('/api/tickets/sync-sr-cr-numbers', fetchTicketsMiddleware, async (req, res) => {
+    const allIssues = req.fetchedIssues;
+
+    try {
+        for (let issue of allIssues) {
+            const linkedIssues = issue.fields.issuelinks;
+
+            if (linkedIssues && linkedIssues.length > 0) {
+                const outwardIssue = linkedIssues[0]?.outwardIssue;
+
+                if (outwardIssue) {
+                    const linkedIssueDetails = await fetchIssueDetails(outwardIssue.id);
+
+                    // Sync SR Number if empty
+                    if (!issue.fields.customfield_17643 && linkedIssueDetails && linkedIssueDetails.fields.customfield_17801) {
+                        const srNumber = extractSRCRNumber(linkedIssueDetails.fields.customfield_17801);
+                        await updateIssueField(issue.id, { customfield_17643: srNumber });
+                        console.log(`SR Number updated for ticket ${issue.key}: ${srNumber}`);
+                    }
+
+                    // Sync CR Number (SalesForce CR) if empty
+                    if (!issue.fields.customfield_17687 && linkedIssueDetails && linkedIssueDetails.fields.customfield_17800) {
+                        const crNumber = extractSRCRNumber(linkedIssueDetails.fields.customfield_17800);
+                        await updateIssueField(issue.id, { customfield_17687: crNumber });
+                        console.log(`CR Number (SalesForce CR) updated for ticket ${issue.key}: ${crNumber}`);
+                    }
+                }
+            }
+        }
+
+        res.status(200).send('SR Number and CR Number (SalesForce CR) updated successfully!');
+    } catch (err) {
+        console.error('Error syncing SR Number and CR Number (SalesForce CR):', err.message);
+        res.status(500).send('Error syncing SR Number and CR Number (SalesForce CR)');
+    }
+});
+
 // Function to sync SR Number from Linked Tickets ***
 app.post('/api/tickets/sync-sr-number', fetchTicketsMiddleware, async (req, res) => {
     const allIssues = req.fetchedIssues;
