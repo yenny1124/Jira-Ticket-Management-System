@@ -3,7 +3,7 @@ import axios from 'axios';
 import Select from 'react-select';
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
-import './ticketlist.css';
+import './manuallist.css';
 
 const columnOptions = [
     { value: 'issuetype', label: 'Type' },
@@ -42,7 +42,7 @@ const fieldOptions = [
     { label: 'Comment', value: 'comment' },
 ];
 
-const TicketList = () => {
+const ManualList = () => {
     const [tickets, setTickets] = useState([]);
     const [jql, setJql] = useState('project = LS'); // Default JQL query
     const [error, setError] = useState(null);
@@ -331,6 +331,117 @@ const TicketList = () => {
         </div>
         <div className='container2'>
             {/* Dropdown for field */}
+            <div className='field-container'>
+                <Select
+                    options={fieldOptions}
+                    value={selectedField}
+                    onChange={handleSelectField}
+                    className="field-select"
+                    placeholder="Select a field to update"
+                    isClearable
+                />
+            </div>
+            {/* Form to add comment */}
+            {selectedField?.value === 'comment' && (
+            <form onSubmit={handleAddCommenttoEachFilter}>
+                <div>
+                    <label htmlFor="comment"></label>
+                    <input
+                        id="comment"
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        className='comment-input'
+                        placeholder="Enter your comment"
+                    />
+                    <button type="submit">Add Comment</button>
+                </div>
+            </form>
+            )}
+            {/* Form to update components */}
+            {selectedField?.value === 'components' && (
+            <form onSubmit={handleUpdateComponents}>
+                <div>
+                    <label htmlFor="components"></label>
+                    <input
+                        type="text"
+                        id="components"
+                        value={components}
+                        onChange={(e) => setComponents(e.target.value)}
+                        className='components-input'
+                        placeholder="Enter components separated by commas"
+                    />
+                    <button type="submit">Update Components</button>
+                </div>
+            </form>
+            )}
+            {/* Form to update targetrelease */}
+            {selectedField?.value === 'customfield_17644' && (
+            <form onSubmit={handleUpdateTargetRelease}>
+                <div>
+                    <label htmlFor="targetrelease"></label>
+                    <input
+                        type="text"
+                        id="targetrelease"
+                        value={customfield_17644}
+                        onChange={(e) => setCustomfield_17644(e.target.value)}
+                        className='targetrelease-input'
+                        placeholder="Enter target release separated by commas"
+                    />
+                    <button type="submit">Update Target Release</button>
+                </div>
+            </form>
+            )}
+            {/* Form to update targetversion */}
+            {selectedField?.value === 'customfield_11200' && (
+            <form onSubmit={handleUpdateTargetVersion}>
+                <div>
+                    <label htmlFor="targetversion"></label>
+                    <input
+                        type="text"
+                        id="targetversion"
+                        value={customfield_11200}
+                        onChange={(e) => setCustomfield_11200(e.target.value)}
+                        className='targetversion-input'
+                        placeholder="Enter target version separated by commas"
+                    />
+                    <button type="submit">Update Target Version</button>
+                </div>
+            </form>
+            )}
+            {/* Form to update SR Number */}
+            {selectedField?.value === 'customfield_17643' && (
+            <form onSubmit={handleUpdateSRNumber}>
+                <div>
+                    <label htmlFor="SRnumber"></label>
+                    <input
+                        type="text"
+                        id="SRnumber"
+                        value={customfield_17643}
+                        onChange={(e) => setCustomfield_17643(e.target.value)}
+                        className='SRnumber-input'
+                        placeholder="Enter SR Number"
+                    />
+                    <button type="submit">Update SR Number</button>
+                </div>
+            </form>
+            )}
+            {/* Form to update SalesForce CR */}
+            {selectedField?.value === 'customfield_17687' && (
+            <form onSubmit={handleUpdateSalesForceCR}>
+                <div>
+                    <label htmlFor="salesforceCR"></label>
+                    <input
+                        type="text"
+                        id="salesforceCR"
+                        value={customfield_17687}
+                        onChange={(e) => setCustomfield_17687(e.target.value)}
+                        className='salesforceCR-input'
+                        placeholder="Enter SalesForce CR"
+                    />
+                    <button type="submit">Update SalesForce CR</button>
+                </div>
+            </form>
+            )}
             {/* Dropdown for columns */}
             <DropdownButton id="dropdown-basic-button" title="Columns" className='dropdown-columns'>
                 {columnOptions.map(option => (
@@ -467,4 +578,4 @@ const TicketList = () => {
   );
 };
 
-export default TicketList;
+export default ManualList;

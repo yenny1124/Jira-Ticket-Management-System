@@ -1,0 +1,158 @@
+.ticket-list {
+    /* background-color: ivory; */
+    font-family: Arial, sans-serif;
+    text-align: center; /* Center the content */  
+    margin: 40px;
+}
+
+.ticket-list h1 {
+    padding-top: 10px;
+    font-size: 30px;
+    color: #333;
+}
+
+.container1 {
+    padding-top: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+.container1 .filter-select {
+    height: 40px;
+    width: 20%; 
+    padding-right: 10px;
+}
+
+.container1 .search-input {
+    padding: 6px;
+    width: 500px;
+}
+
+.multi-select {
+    width: 40%; /* Adjust the width as needed */
+    margin: 0 -60px /* Center the select component */
+}
+
+.multi-select .react-select__control {
+    min-height: 30px; /* Adjust the height */
+    height: 30px; /* Adjust the height */
+}
+
+.multi-select .react-select__value-container {
+    height: 30px; /* Adjust the height */
+    padding: 0 6px;
+}
+
+.multi-select .react-select__input {
+    margin: 0px;
+}
+
+.multi-select .react-select__indicators {
+    height: 30px; /* Adjust the height */
+}
+
+.multi-select .react-select__menu {
+    width: 50%; /* Adjust the width as needed */
+    margin: 0 auto; /* Center the dropdown menu */
+}
+
+.container2 {
+    display: flex;
+    padding-top: 10px;
+    justify-content: center;
+    align-items: center;
+    position: relative; /* Use position relative to allow absolute positioning within it */
+}
+
+.container2 .dropdown-columns{
+    position: absolute;
+    right: 0; /* Align the dropdown to the right */
+}
+
+.container2 .field-select{
+    padding-right: 10px;
+    margin: 10px;
+}
+
+.ticket-list .comment-input {
+    padding: 6px;
+    margin: 10px;
+    width: 500px;
+    box-sizing: border-box;
+}
+
+.ticket-list .components-input {
+    padding: 6px;
+    margin: 10px;
+    width: 500px;
+    box-sizing: border-box;
+}
+
+.ticket-list .targetrelease-input {
+    padding: 6px;
+    margin: 10px;
+    width: 500px;
+    box-sizing: border-box;
+}
+
+.ticket-list .targetversion-input {
+    padding: 6px;
+    margin: 10px;
+    width: 500px;
+    box-sizing: border-box;
+}
+
+.ticket-list .SRnumber-input {
+    padding: 6px;
+    margin: 10px;
+    width: 300px;
+    box-sizing: border-box;
+}
+
+.ticket-list .salesforceCR-input {
+    padding: 6px;
+    margin: 10px;
+    width: 300px;
+    box-sizing: border-box;
+}
+
+.ticket-list button {
+    padding: 7px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.ticket-list button:hover {
+    background-color: #0056b3;
+}
+
+.ticket-list .more-option-button {
+    font-size: 15px; /* Adjust size as needed */
+    background-color: #007bff;
+    cursor: pointer;
+}
+
+.ticket-list table{
+    width:100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.ticket-list th, .ticket-list td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.ticket-list th {
+    background-color: #f2f2f2;
+    text-align: center;
+}
+
+.ticket-list td.description {
+    text-align: left;
+}
+
+
