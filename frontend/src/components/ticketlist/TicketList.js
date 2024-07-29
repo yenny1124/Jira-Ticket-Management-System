@@ -306,7 +306,7 @@ const TicketList = () => {
 
   return (
     <div className="ticket-list">
-        <h1>Landslide Jira Management Automation System</h1>
+        {/* <h1>Landslide Jira Management Automation System</h1> */}
         {/* Dropdown for filters & columns */}
         <div className='container1'>
             <Select
@@ -464,12 +464,12 @@ const TicketList = () => {
         {/* Table for columns by dropdown */}
         <table>
             <thead>
-                    <tr>
-                        {selectedColumns.map(colValue => {
-                            const col = columnOptions.find(option => option.value === colValue);
-                            return <th key={col.value}>{col.label}</th>;
-                        })}
-                    </tr>
+                <tr>
+                    {selectedColumns.map(colValue => {
+                        const col = columnOptions.find(option => option.value === colValue);
+                        return <th key={col.value}>{col.label}</th>;
+                    })}
+                </tr>
             </thead>
             <tbody>
                 {tickets.map((ticket) => (
