@@ -61,7 +61,7 @@ const AutomationList = () => {
     const fetchTickets = async (query) => {
         setError(null);
         try {
-            const response = await axios.get('http://localhost:5000/api/tickets', {
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tickets`, {
                 params: { jql: query }
             });
             setTickets(response.data);
@@ -75,25 +75,26 @@ const AutomationList = () => {
         fetchTickets(jql);
     };
 
+    // function to handle selecting a filter
+    const handleSelectFilter = (selectedOption) => {
+        const filterJql = selectedOption ? selectedOption.value : '';
+        setJql(filterJql); // Set the JQL query in the search bar
+        fetchTickets(filterJql);
+        setSelectedFilter(selectedOption); // Set the selected filter
+        console.log("Selected Filter:", selectedOption); // Debug log
+    };
+
+    // function to handle selecting a field in tickets *** 
+    const handleSelectField = (selectedOption) => {
+        setSelectedField(selectedOption); // Set the selected field
+    };
+
     // function to handle selecting columns
     const handleColumnChange = (columnValue) => {
         const updatedColumns = selectedColumns.includes(columnValue)
             ? selectedColumns.filter(col => col !== columnValue)
             : [...selectedColumns, columnValue];
         setSelectedColumns(updatedColumns);
-    };
-
-    // function to handle selecting a filter 
-    const handleSelectFilter = (selectedOption) => {
-        const filterJql = selectedOption ? selectedOption.value : '';
-        setJql(filterJql); // Set the JQL query in the search bar
-        fetchTickets(filterJql);
-        setSelectedFilter(null); // Reset the filter to default option
-    };
-
-    // function to handle selecting a field in tickets *** 
-    const handleSelectField = (selectedOption) => {
-        setSelectedField(selectedOption); // Set the selected field
     };
 
     // function to format descriptions
@@ -135,172 +136,17 @@ const AutomationList = () => {
         return `${day}/${month}/${year}`;
     };
 
-    // function to add comments
-    const handleAddCommenttoEachFilter = async (e) => {
+    // function to handle syncing SR/CRs to Bugs
+    const handleSyncSRCRtoBugs = async (e) => {
         e.preventDefault();
-        if (!jql) {
-            setError('Please select a filter/query');
-            return;
-        }
-        if (!comment) {
-            setError('Please enter a comment.');
-            return;
-        }
-        setError(null);
-        try {
-            const response = await axios.post(`http://localhost:5000/api/tickets/comments`, 
-                {
-                    body: comment // This should be inside the request payload
-                }, 
-                {
-                    params: { jql },
-                    headers: {'Content-Type': 'application/json'}
-                }
-            );
-            console.log('Comment added:', response.data);
-            setComment(''); // Clear the comment input
-            setSelectedField(null); // Reset the selected field combo box
-            setSuccessMessage('Comment added successfully!'); // Set success message
-        } catch (err) {
-            setError(err.message);
-        }
-    };
-
-    // function to update components field
-    const handleUpdateComponents = async (e) => {
-        e.preventDefault();
-        if (!jql) {
-            setError('Please select a filter/query');
-            return;
-        }
-        if (!components) {
-            setError('Please enter components.');
-            return;
-        }
-        setError(null);
-        try {
-            const response = await axios.put(`http://localhost:5000/api/tickets/updateComponents`, 
-                { components: components.split(',').map(comp => ({ name: comp.trim() })) }, 
-                { params: { jql }, 
-                    headers: { 'Content-Type': 'application/json' } }
-            );
-            console.log('Components updated:', response.data);
-            setComponents(''); // Clear the components input
-            setSelectedField(null); // Reset the selected field combo box
-            setSuccessMessage('Components updated successfully!');
-        } catch (err) {
-            setError(err.message);
-        }
-    };
-
-    // function to update targetrelease field
-    const handleUpdateTargetRelease = async (e) => {
-        e.preventDefault();
-        if (!jql) {
-            setError('Please select a filter/query');
-            return;
-        }
-        if (!customfield_17644) {
-            setError('Please enter target release.');
-            return;
-        }
-        setError(null);
-        try {
-            const response = await axios.put(`http://localhost:5000/api/tickets/updateTargetRelease`, 
-                { customfield_17644: customfield_17644.split(',').map(targetRel => ({ name: targetRel.trim() })) }, 
-                { params: { jql }, 
-                    headers: { 'Content-Type': 'application/json' } 
-                }
-            );
-            console.log('Target Release updated:', response.data);
-            setCustomfield_17644(''); // Clear the targer release input
-            setSelectedField(null); // Reset the selected field combo box
-            setSuccessMessage('Target Release updated successfully!');
-        } catch (err) {
-            setError(err.message);
-        }
-    };
-
-    // function to update targetversion field
-    const handleUpdateTargetVersion = async (e) => {
-        e.preventDefault();
-        if (!jql) {
-            setError('Please select a filter/query');
-            return;
-        }
-        if (!customfield_11200) {
-            setError('Please enter target version.');
-            return;
-        }
-        setError(null);
-        try {
-            const response = await axios.put(`http://localhost:5000/api/tickets/updateTargetVersion`, 
-                { customfield_11200: customfield_11200.split(',').map(targetVer => ({ name: targetVer.trim() })) }, 
-                { params: { jql }, 
-                    headers: { 'Content-Type': 'application/json' } }
-            );
-            console.log('Target Version updated:', response.data);
-            setCustomfield_11200(''); // Clear the target version input
-            setSelectedField(null); // Reset the selected field combo box
-            setSuccessMessage('Target Version updated successfully!');
-        } catch (err) {
-            setError(err.message);
-        }
-    };
-
-    // function to update SR Number field
-    const handleUpdateSRNumber = async (e) => {
-        e.preventDefault();
-        if (!jql) {
-            setError('Please select a filter/query');
-            return;
-        }
-        if (!customfield_17643) {
-            setError('Please enter SR Number.');
-            return;
-        }
-        setError(null);
-        try {
-            const response = await axios.put(`http://localhost:5000/api/tickets/updateSRnumber`, 
-                { customfield_17643: customfield_17643}, 
-                { params: { jql }, 
-                    headers: { 'Content-Type': 'application/json' } 
-                }
-            );
-            console.log('SR Number updated:', response.data);
-            setCustomfield_17643(''); // Clear the SR Number input
-            setSelectedField(null); // Reset the selected field combo box
-            setSuccessMessage('SR Number updated successfully!');
-        } catch (err) {
-            setError(err.message);
-        }
-    };
-
-    // function to update SalesForce CR field
-    const handleUpdateSalesForceCR  = async (e) => {
-        e.preventDefault();
-        if (!jql) {
-            setError('Please select a filter/query');
-            return;
-        }
-        if (!customfield_17687) {
-            setError('Please enter SalesForce CR.');
-            return;
-        }
-        setError(null);
-        try {
-            const response = await axios.put(`http://localhost:5000/api/tickets/updateSalesForceCR`, 
-                { customfield_17687: customfield_17687}, 
-                { params: { jql }, 
-                    headers: { 'Content-Type': 'application/json' } 
-                }
-            );
-            console.log('SalesForce CR updated:', response.data);
-            setCustomfield_17687(''); // Clear the SalesForce CR input
-            setSelectedField(null); // Reset the selected field combo box
-            setSuccessMessage('SalesForce CR updated successfully!');
-        } catch (err) {
-            setError(err.message);
+        if (selectedFilter) {
+            try {
+                const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tickets/sync-sr-cr-numbers`, { jql: selectedFilter.value });
+                console.log(response.data);
+                setSuccessMessage('SR/CR Numbers synced successfully!');
+            } catch (err) {
+                console.error('Error syncing SR/CR Numbers:', err.message);
+            }
         }
     };
 
@@ -330,117 +176,13 @@ const AutomationList = () => {
             </div>
         </div>
         <div className='container2'>
-            {/* Dropdown for field */}
-            <div className='field-container'>
-                <Select
-                    options={fieldOptions}
-                    value={selectedField}
-                    onChange={handleSelectField}
-                    className="field-select"
-                    placeholder="Select a field to update"
-                    isClearable
-                />
-            </div>
-            {/* Form to add comment */}
-            {selectedField?.value === 'comment' && (
-            <form onSubmit={handleAddCommenttoEachFilter}>
-                <div>
-                    <label htmlFor="comment"></label>
-                    <input
-                        id="comment"
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        className='comment-input'
-                        placeholder="Enter your comment"
-                    />
-                    <button type="submit">Add Comment</button>
-                </div>
-            </form>
-            )}
-            {/* Form to update components */}
-            {selectedField?.value === 'components' && (
-            <form onSubmit={handleUpdateComponents}>
-                <div>
-                    <label htmlFor="components"></label>
-                    <input
-                        type="text"
-                        id="components"
-                        value={components}
-                        onChange={(e) => setComponents(e.target.value)}
-                        className='components-input'
-                        placeholder="Enter components separated by commas"
-                    />
-                    <button type="submit">Update Components</button>
-                </div>
-            </form>
-            )}
-            {/* Form to update targetrelease */}
-            {selectedField?.value === 'customfield_17644' && (
-            <form onSubmit={handleUpdateTargetRelease}>
-                <div>
-                    <label htmlFor="targetrelease"></label>
-                    <input
-                        type="text"
-                        id="targetrelease"
-                        value={customfield_17644}
-                        onChange={(e) => setCustomfield_17644(e.target.value)}
-                        className='targetrelease-input'
-                        placeholder="Enter target release separated by commas"
-                    />
-                    <button type="submit">Update Target Release</button>
-                </div>
-            </form>
-            )}
-            {/* Form to update targetversion */}
-            {selectedField?.value === 'customfield_11200' && (
-            <form onSubmit={handleUpdateTargetVersion}>
-                <div>
-                    <label htmlFor="targetversion"></label>
-                    <input
-                        type="text"
-                        id="targetversion"
-                        value={customfield_11200}
-                        onChange={(e) => setCustomfield_11200(e.target.value)}
-                        className='targetversion-input'
-                        placeholder="Enter target version separated by commas"
-                    />
-                    <button type="submit">Update Target Version</button>
-                </div>
-            </form>
-            )}
-            {/* Form to update SR Number */}
-            {selectedField?.value === 'customfield_17643' && (
-            <form onSubmit={handleUpdateSRNumber}>
-                <div>
-                    <label htmlFor="SRnumber"></label>
-                    <input
-                        type="text"
-                        id="SRnumber"
-                        value={customfield_17643}
-                        onChange={(e) => setCustomfield_17643(e.target.value)}
-                        className='SRnumber-input'
-                        placeholder="Enter SR Number"
-                    />
-                    <button type="submit">Update SR Number</button>
-                </div>
-            </form>
-            )}
-            {/* Form to update SalesForce CR */}
-            {selectedField?.value === 'customfield_17687' && (
-            <form onSubmit={handleUpdateSalesForceCR}>
-                <div>
-                    <label htmlFor="salesforceCR"></label>
-                    <input
-                        type="text"
-                        id="salesforceCR"
-                        value={customfield_17687}
-                        onChange={(e) => setCustomfield_17687(e.target.value)}
-                        className='salesforceCR-input'
-                        placeholder="Enter SalesForce CR"
-                    />
-                    <button type="submit">Update SalesForce CR</button>
-                </div>
-            </form>
+            {/* Form to sync SR/CRs to Bugs */}
+            {selectedFilter?.label === 'Sync SR/CRs to Bugs' && (
+                <form onSubmit={handleSyncSRCRtoBugs}>
+                    <div>
+                        <button type="submit" className='action-button-sync-sr-cr'>Sync SR/CR Numbers from Linked Tickets</button>
+                    </div>
+                </form>
             )}
             {/* Dropdown for columns */}
             <DropdownButton id="dropdown-basic-button" title="Columns" className='dropdown-columns'>

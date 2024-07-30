@@ -69,52 +69,6 @@
     right: 0; /* Align the dropdown to the right */
 }
 
-.container2 .field-select{
-    padding-right: 10px;
-    margin: 10px;
-}
-
-.ticket-list .comment-input {
-    padding: 6px;
-    margin: 10px;
-    width: 500px;
-    box-sizing: border-box;
-}
-
-.ticket-list .components-input {
-    padding: 6px;
-    margin: 10px;
-    width: 500px;
-    box-sizing: border-box;
-}
-
-.ticket-list .targetrelease-input {
-    padding: 6px;
-    margin: 10px;
-    width: 500px;
-    box-sizing: border-box;
-}
-
-.ticket-list .targetversion-input {
-    padding: 6px;
-    margin: 10px;
-    width: 500px;
-    box-sizing: border-box;
-}
-
-.ticket-list .SRnumber-input {
-    padding: 6px;
-    margin: 10px;
-    width: 300px;
-    box-sizing: border-box;
-}
-
-.ticket-list .salesforceCR-input {
-    padding: 6px;
-    margin: 10px;
-    width: 300px;
-    box-sizing: border-box;
-}
 
 .ticket-list button {
     padding: 7px 15px;

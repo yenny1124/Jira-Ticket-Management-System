@@ -61,7 +61,7 @@ const ManualList = () => {
     const fetchTickets = async (query) => {
         setError(null);
         try {
-            const response = await axios.get('http://localhost:5000/api/tickets', {
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tickets`, {
                 params: { jql: query }
             });
             setTickets(response.data);
@@ -148,7 +148,7 @@ const ManualList = () => {
         }
         setError(null);
         try {
-            const response = await axios.post(`http://localhost:5000/api/tickets/comments`, 
+            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tickets/comments`, 
                 {
                     body: comment // This should be inside the request payload
                 }, 
@@ -179,7 +179,7 @@ const ManualList = () => {
         }
         setError(null);
         try {
-            const response = await axios.put(`http://localhost:5000/api/tickets/updateComponents`, 
+            const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tickets/updateComponents`, 
                 { components: components.split(',').map(comp => ({ name: comp.trim() })) }, 
                 { params: { jql }, 
                     headers: { 'Content-Type': 'application/json' } }
@@ -206,7 +206,7 @@ const ManualList = () => {
         }
         setError(null);
         try {
-            const response = await axios.put(`http://localhost:5000/api/tickets/updateTargetRelease`, 
+            const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tickets/updateTargetRelease`, 
                 { customfield_17644: customfield_17644.split(',').map(targetRel => ({ name: targetRel.trim() })) }, 
                 { params: { jql }, 
                     headers: { 'Content-Type': 'application/json' } 
@@ -234,7 +234,7 @@ const ManualList = () => {
         }
         setError(null);
         try {
-            const response = await axios.put(`http://localhost:5000/api/tickets/updateTargetVersion`, 
+            const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tickets/updateTargetVersion`, 
                 { customfield_11200: customfield_11200.split(',').map(targetVer => ({ name: targetVer.trim() })) }, 
                 { params: { jql }, 
                     headers: { 'Content-Type': 'application/json' } }
@@ -261,7 +261,7 @@ const ManualList = () => {
         }
         setError(null);
         try {
-            const response = await axios.put(`http://localhost:5000/api/tickets/updateSRnumber`, 
+            const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tickets/updateSRnumber`, 
                 { customfield_17643: customfield_17643}, 
                 { params: { jql }, 
                     headers: { 'Content-Type': 'application/json' } 
@@ -289,7 +289,7 @@ const ManualList = () => {
         }
         setError(null);
         try {
-            const response = await axios.put(`http://localhost:5000/api/tickets/updateSalesForceCR`, 
+            const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tickets/updateSalesForceCR`, 
                 { customfield_17687: customfield_17687}, 
                 { params: { jql }, 
                     headers: { 'Content-Type': 'application/json' } 

@@ -2,7 +2,9 @@ const express = require('express');
 const axios = require('axios');
 const cors = require('cors'); // Import the cors module
 const app = express();
-const port = 5000;
+const dotenv = require('dotenv');
+dotenv.config();
+const port = process.env.PORT || 5000;
 
 const JIRA_URL = "https://jira-qa.spirenteng.com";
 const API_TOKEN = "MjQzNDYyMDk5OTE0OmlLkGEVs19rBbJTVBWp7XWFPiMj";
@@ -388,7 +390,7 @@ const updateIssueField = async (issueId, fields) => {
 };
 
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`Server is running on ${process.env.BASE_URL}`);
 });
 
 
