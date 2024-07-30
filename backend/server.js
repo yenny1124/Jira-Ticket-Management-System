@@ -75,6 +75,7 @@ app.get('/api/tickets', fetchTicketsMiddleware, (req, res) => {
 // Update “components” field in tickets using a PUT request 
 app.put('/api/tickets/updateComponents', fetchTicketsMiddleware, async (req, res) => {
     const allIssues = req.fetchedIssues;
+    const newComponents = req.body.components; // Extracting the new components from the request body
 
     for (const issue of allIssues) {
         const issueKey = issue.key;
@@ -103,6 +104,7 @@ app.put('/api/tickets/updateComponents', fetchTicketsMiddleware, async (req, res
 // Update "Target Release (customfield_17644)" field in tickets using a PUT request
 app.put('/api/tickets/updateTargetRelease', fetchTicketsMiddleware, async (req, res) => {
     const allIssues = req.fetchedIssues;
+    const newCustomField17644 = req.body.customfield_17644; // Extracting the new value for customfield_17644 from the request body
     
     for (const issue of allIssues) {
         const issueKey = issue.key;
@@ -132,6 +134,7 @@ app.put('/api/tickets/updateTargetRelease', fetchTicketsMiddleware, async (req, 
 // Update “Target Version (customfield_11200)” field in tickets using a PUT request 
 app.put('/api/tickets/updateTargetVersion', fetchTicketsMiddleware, async (req, res) => {
     const allIssues = req.fetchedIssues;
+    const newCustomField11200 = req.body.customfield_11200; // Extracting the new value for customfield_11200 from the request body
 
     for (const issue of allIssues) {
         const issueKey = issue.key;
@@ -162,6 +165,7 @@ app.put('/api/tickets/updateTargetVersion', fetchTicketsMiddleware, async (req, 
 // Update “SR Number (customfield_17643)” field in tickets using a PUT request
 app.put('/api/tickets/updateSRnumber', fetchTicketsMiddleware, async (req, res) => {
     const allIssues = req.fetchedIssues;
+    const newCustomField17643 = req.body.customfield_17643; // Extracting the new value for customfield_17643 from the request body
 
     for (const issue of allIssues) {
         const issueKey = issue.key;
@@ -192,6 +196,7 @@ app.put('/api/tickets/updateSRnumber', fetchTicketsMiddleware, async (req, res) 
 // Update “SalesForce CR (customfield_17687)” field in tickets using a PUT request
 app.put('/api/tickets/updateSalesForceCR', fetchTicketsMiddleware, async (req, res) => {
     const allIssues = req.fetchedIssues;
+    const newCustomField17687 = req.body.customfield_17687; // Extract the new value for customfield_17687 from the request body
     
     for (const issue of allIssues) {
         const issueKey = issue.key;
@@ -221,6 +226,7 @@ app.put('/api/tickets/updateSalesForceCR', fetchTicketsMiddleware, async (req, r
 // iterate over the fetched issues and add a comment to each ticket:
 app.post('/api/tickets/comments', fetchTicketsMiddleware, async (req, res) => {
     const allIssues = req.fetchedIssues;
+    const commentBody = req.body.body; // The comment to be added
 
     for (const issue of allIssues) {
         const issueKey = issue.key;
@@ -349,6 +355,38 @@ app.post('/api/tickets/sync-cr-number', fetchTicketsMiddleware, async (req, res)
         console.error('Error syncing CR Number(SalesForce CR):', err.message);
         res.status(500).send('Error syncing CR Number(SalesForce CR)');
     }
+});
+
+
+// PUT method to add or update a comment with each assignee in tickets
+app.put('/api/tickets/comment-for-missing-primary-component', fetchTicketsMiddleware, async (req, res) => {
+    const allIssues = req.fetchedIssues;
+    const commentTemplate = "@assignee, please add the Primary Component to the Component field. One of TAS, TS, TC-GUI, Documentation, CI, “Mobile App”, Licensing, Build, \"License Tool or Server\", or System.";
+
+    for (const issue of allIssues) {
+        const issueKey = issue.key;
+        const assignee = issue.fields.assignee ? issue.fields.assignee.displayName : 'assignee';
+        const commentBody = commentTemplate.replace('@assignee', `@${assignee}`);
+        const commentUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}/comment`;
+        const comment = { body: commentBody };
+            
+        console.log(`Adding comment to ticket with issue key: ${issueKey}`);
+        try {
+            const response = await axios.post(commentUrl, comment, {
+                headers: {
+                    'Authorization': `Bearer ${API_TOKEN}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            console.log(`Comment added to ${issueKey}, response status: ${response.status}`);
+        } catch (error) {
+            console.error(`Error adding comment to ${issueKey}: ${error.message}`);
+            console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
+        }
+    }
+        
+    res.json({ message: 'Comments added to all tickets successfully.' });
 });
 
 // Helper function to extract SR number & CR Number(SalesForce CR) from HTML string, only extract numbers

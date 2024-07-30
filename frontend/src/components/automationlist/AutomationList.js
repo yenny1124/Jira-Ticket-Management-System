@@ -84,11 +84,6 @@ const AutomationList = () => {
         console.log("Selected Filter:", selectedOption); // Debug log
     };
 
-    // function to handle selecting a field in tickets *** 
-    const handleSelectField = (selectedOption) => {
-        setSelectedField(selectedOption); // Set the selected field
-    };
-
     // function to handle selecting columns
     const handleColumnChange = (columnValue) => {
         const updatedColumns = selectedColumns.includes(columnValue)
@@ -150,6 +145,37 @@ const AutomationList = () => {
         }
     };
 
+    // function to add comments
+    const handleAddCommenttoEachAssignee = async (e) => {
+        e.preventDefault();
+        if (!jql) {
+            setError('Please select a filter/query');
+            return;
+        }
+        if (!comment) {
+            setError('Please enter a comment.');
+            return;
+        }
+        setError(null);
+        try {
+            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tickets/comments`, 
+                {
+                    body: comment // This should be inside the request payload
+                }, 
+                {
+                    params: { jql },
+                    headers: {'Content-Type': 'application/json'}
+                }
+            );
+            console.log('Comment added:', response.data);
+            setComment(''); // Clear the comment input
+            setSelectedField(null); // Reset the selected field combo box
+            setSuccessMessage('Comment added successfully!'); // Set success message
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
   return (
     <div className="ticket-list">
         {/* <h1>Landslide Jira Management Automation System</h1> */}
@@ -176,7 +202,17 @@ const AutomationList = () => {
             </div>
         </div>
         <div className='container2'>
-            {/* Form to sync SR/CRs to Bugs */}
+            {/* Action Form for Missing Primary Component */}
+            {selectedFilter?.label === 'Test Filter' && (
+                <form onSubmit={handleAddCommenttoEachAssignee}>
+                    <div>
+                        <button type="submit" className='action-button-missing-primary-comp'>Add a comment:
+ @assignee</button>
+                    </div>
+                </form>
+            )}           
+            {/* Action Form for Cloned Defects still Defects */}
+            {/* Action Form for Sync SR/CRs to Bugs */}
             {selectedFilter?.label === 'Sync SR/CRs to Bugs' && (
                 <form onSubmit={handleSyncSRCRtoBugs}>
                     <div>
