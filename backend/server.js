@@ -6,8 +6,8 @@ const dotenv = require('dotenv');
 dotenv.config();
 const port = process.env.PORT || 5000;
 
-const JIRA_URL = "https://jira-qa.spirenteng.com";
-const API_TOKEN = "MjQzNDYyMDk5OTE0OmlLkGEVs19rBbJTVBWp7XWFPiMj";
+const JIRA_URL = process.env.JIRA_URL;
+const API_TOKEN = process.env.API_TOKEN;
 const MAX_FETCHED_ISSUES = 100; // Limit to prevent infinite fetching
 // const jqlQuery = "(project = LS OR project = ORAN) AND \"Target Release\" in (LS-24.2) and Component in (\"TAS\", TC-GUI)"; // Example JQL query
 
@@ -15,6 +15,8 @@ app.use(cors()); // Enable CORS for all routes
 // a middleware is responsible for parsing JSON formatted request bodies 
 // and making the parsed data available in req.body.
 app.use(express.json()); 
+const fs = require('fs');
+const path = require('path');
 
 app.get('/', (req, res) => {
     res.send('Welcome to the Jira Ticket Management API. Use /api/tickets to get the tickets.');
@@ -22,7 +24,10 @@ app.get('/', (req, res) => {
 
 // Middleware to fetch tickets (should be initialized first before it's used)
 const fetchTicketsMiddleware = async (req, res, next) => {
-    const jqlQuery = req.query.jql || 'project = LS'; // Use the JQL query from the request
+    const jqlQuery = req.query.jql; // Only use the JQL query from the request
+    if (!jqlQuery) {
+        return res.status(400).json({ error: 'JQL query is required' });
+    }
     const maxResults = parseInt(req.query.maxResults) || 50;
     let startAt = 0;
     let allIssues = [];
@@ -253,9 +258,15 @@ app.post('/api/tickets/comments', fetchTicketsMiddleware, async (req, res) => {
 
 });
 
-// Function to sync SR Number and CR Number from Linked Tickets ***
+// Function to sync SR Number and CR Number from Linked Tickets 
 app.post('/api/tickets/sync-sr-cr-numbers', fetchTicketsMiddleware, async (req, res) => {
     const allIssues = req.fetchedIssues;
+    if (allIssues.length === 0) {
+        console.log('No fetched tickets found.');
+        return res.json({ message: 'There are no fetched tickets.' });
+    }
+
+    let updateLog = "Sync SR/CRs to Bugs Updates:\n";
 
     try {
         for (let issue of allIssues) {
@@ -267,23 +278,38 @@ app.post('/api/tickets/sync-sr-cr-numbers', fetchTicketsMiddleware, async (req, 
                 if (outwardIssue) {
                     const linkedIssueDetails = await fetchIssueDetails(outwardIssue.id);
 
+                    updateLog += `${issue.key}    ${issue.fields.summary}\n`;
+                    updateLog += `--Linked to: ${linkedIssueDetails.key} ${linkedIssueDetails.fields.summary}\n`;
+                    let srNumber = "", crNumber = "";
                     // Sync SR Number if empty
                     if (!issue.fields.customfield_17643 && linkedIssueDetails && linkedIssueDetails.fields.customfield_17801) {
-                        const srNumber = extractSRCRNumber(linkedIssueDetails.fields.customfield_17801);
+                        srNumber = extractSRCRNumber(linkedIssueDetails.fields.customfield_17801);
                         await updateIssueField(issue.id, { customfield_17643: srNumber });
-                        console.log(`SR Number updated for ticket ${issue.key}: ${srNumber}`);
+                        if(srNumber!=""){
+                            console.log(`SR Number updated for ticket ${issue.key}: ${srNumber}`);
+                            updateLog += `---SalesForce SR: ${srNumber}\n`;
+                        }
                     }
 
                     // Sync CR Number (SalesForce CR) if empty
                     if (!issue.fields.customfield_17687 && linkedIssueDetails && linkedIssueDetails.fields.customfield_17800) {
-                        const crNumber = extractSRCRNumber(linkedIssueDetails.fields.customfield_17800);
+                        crNumber = extractSRCRNumber(linkedIssueDetails.fields.customfield_17800);
                         await updateIssueField(issue.id, { customfield_17687: crNumber });
-                        console.log(`CR Number (SalesForce CR) updated for ticket ${issue.key}: ${crNumber}`);
+                        if(crNumber!=""){
+                            console.log(`CR Number (SalesForce CR) updated for ticket ${issue.key}: ${crNumber}`);
+                            updateLog += `---SalesForce CR: ${crNumber}\n`;
+                        }
+                    }
+
+                    // If neither SR nor CR Number was updated
+                    if (srNumber==""&&crNumber=="") {
+                        updateLog += `---SKIPPED DEFECT HAS NO SR/CR\n`;
                     }
                 }
             }
         }
-
+        // Write the update log to a file
+        fs.appendFileSync('ls-jmas.txt', updateLog);
         res.status(200).send('SR Number and CR Number (SalesForce CR) updated successfully!');
     } catch (err) {
         console.error('Error syncing SR Number and CR Number (SalesForce CR):', err.message);
@@ -291,76 +317,28 @@ app.post('/api/tickets/sync-sr-cr-numbers', fetchTicketsMiddleware, async (req, 
     }
 });
 
-// Function to sync SR Number from Linked Tickets ***
-app.post('/api/tickets/sync-sr-number', fetchTicketsMiddleware, async (req, res) => {
-    const allIssues = req.fetchedIssues;
-
-    try {
-        for (let issue of allIssues) {
-            if (!issue.fields.customfield_17643) {
-                const linkedIssues = issue.fields.issuelinks;
-
-                if (linkedIssues && linkedIssues.length > 0) {
-                    const outwardIssue = linkedIssues[0]?.outwardIssue;
-
-                    if (outwardIssue) {
-                        const linkedIssueDetails = await fetchIssueDetails(outwardIssue.id);
-
-                        if (linkedIssueDetails && linkedIssueDetails.fields.customfield_17801) {
-                            const srNumber = extractSRCRNumber(linkedIssueDetails.fields.customfield_17801);
-
-                            await updateIssueField(issue.id, { customfield_17643: srNumber });
-                            console.log(`SR Number updated for ticket ${issue.key}: ${srNumber}`);
-                        }
-                    }
-                }
-            }
+// Endpoint to serve the log file for Sync SR/CRs to Bugs
+app.get('/api/tickets/sync-sr-cr-numbers/logs', (req, res) => {
+    const logFilePath = path.join(__dirname, 'ls-jmas.txt');
+    
+    fs.readFile(logFilePath, 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading log file:', err.message);
+            return res.status(500).send('Error reading log file');
         }
-
-        res.status(200).send('SR Number updated successfully!');
-    } catch (err) {
-        console.error('Error syncing SR Number:', err.message);
-        res.status(500).send('Error syncing SR Number');
-    }
+        res.send(data);
+    });
 });
-
-// Function to sync CR Number(SalesForce CR) from Linked Tickets ***
-app.post('/api/tickets/sync-cr-number', fetchTicketsMiddleware, async (req, res) => {
-    const allIssues = req.fetchedIssues;
-
-    try {
-        for (let issue of allIssues) {
-            if (!issue.fields.customfield_17687) {
-                const linkedIssues = issue.fields.issuelinks;
-
-                if (linkedIssues && linkedIssues.length > 0) {
-                    const outwardIssue = linkedIssues[0]?.outwardIssue;
-
-                    if (outwardIssue) {
-                        const linkedIssueDetails = await fetchIssueDetails(outwardIssue.id);
-
-                        if (linkedIssueDetails && linkedIssueDetails.fields.customfield_17800) {
-                            const srNumber = extractSRCRNumber(linkedIssueDetails.fields.customfield_17800);
-
-                            await updateIssueField(issue.id, { customfield_17687: srNumber });
-                            console.log(`CR Number(SalesForce CR) updated for ticket ${issue.key}: ${srNumber}`);
-                        }
-                    }
-                }
-            }
-        }
-
-        res.status(200).send('CR Number(SalesForce CR) updated successfully!');
-    } catch (err) {
-        console.error('Error syncing CR Number(SalesForce CR):', err.message);
-        res.status(500).send('Error syncing CR Number(SalesForce CR)');
-    }
-});
-
 
 // PUT method to add or update a comment with each assignee in tickets
 app.put('/api/tickets/comment-for-missing-primary-component', fetchTicketsMiddleware, async (req, res) => {
     const allIssues = req.fetchedIssues;
+    if (allIssues.length === 0) {
+        console.log('No fetched tickets found.');
+        return res.json({ message: 'There are no fetched tickets.' });
+    }
+
+    let updateLog = "Missing Primary Component Updates:\n";
     const commentTemplate = "@assignee, please add the Primary Component to the Component field. One of TAS, TS, TC-GUI, Documentation, CI, “Mobile App”, Licensing, Build, \"License Tool or Server\", or System.";
 
     for (const issue of allIssues) {
@@ -379,14 +357,91 @@ app.put('/api/tickets/comment-for-missing-primary-component', fetchTicketsMiddle
                     'Content-Type': 'application/json'
                 }
             });
+            updateLog += `Comment added to ${issueKey} - assignee: @${assignee}\n`;
             console.log(`Comment added to ${issueKey}, response status: ${response.status}`);
         } catch (error) {
+            updateLog += `Failed to add comment to ${issueKey} - assignee: @${assignee} - Error: ${error.message}\n`;
             console.error(`Error adding comment to ${issueKey}: ${error.message}`);
-            console.error(`Error response data: ${JSON.stringify(error.response.data)}`);
         }
     }
-        
+
+    // Write the update log to a file
+    try {
+        fs.appendFileSync('ls-jmas.txt', updateLog);
+    } catch (fileError) {
+        console.error('Error writing log file:', fileError.message);
+    }
+
     res.json({ message: 'Comments added to all tickets successfully.' });
+});
+
+// Endpoint to serve the log file for Missing Primary Component 
+app.get('/api/tickets/comment-for-missing-primary-component/logs', (req, res) => {
+    const logFilePath = path.join(__dirname, 'ls-jmas.txt');
+    
+    fs.readFile(logFilePath, 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading log file:', err.message);
+            return res.status(500).send('Error reading log file');
+        }
+        res.send(data);
+    });
+});
+
+// PUT method to add or update a comment with each assignee in tickets
+app.put('/api/tickets/comment-for-cloned-defects-still-defects', fetchTicketsMiddleware, async (req, res) => {
+    const allIssues = req.fetchedIssues;
+    if (allIssues.length === 0) {
+        console.log('No fetched tickets found.');
+        return res.json({ message: 'There are no fetched tickets.' });
+    }
+
+    let updateLog = "Cloned Defects still Defects Updates:\n";
+    const commentTemplate = "@assignee, please convert/move your cloned Defect into a Bug and follow the standard process. You seem to have missed the step to move the Defect to a Bug.";
+
+    for (const issue of allIssues) {
+        const issueKey = issue.key;
+        const assignee = issue.fields.assignee ? issue.fields.assignee.displayName : 'assignee';
+        const commentBody = commentTemplate.replace('@assignee', `@${assignee}`);
+        const commentUrl = `${JIRA_URL}/rest/api/2/issue/${issueKey}/comment`;
+        const comment = { body: commentBody };
+            
+        console.log(`Adding comment to ticket with issue key: ${issueKey}`);
+        try {
+            const response = await axios.post(commentUrl, comment, {
+                headers: {
+                    'Authorization': `Bearer ${API_TOKEN}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            updateLog += `Comment added to ${issueKey} - assignee: @${assignee}\n`;
+            console.log(`Comment added to ${issueKey}, response status: ${response.status}`);
+        } catch (error) {
+            updateLog += `Failed to add comment to ${issueKey} - assignee: @${assignee} - Error: ${error.message}\n`;
+            console.error(`Error adding comment to ${issueKey}: ${error.message}`);
+        }
+    }
+    // Write the update log to a file
+    try {
+        fs.appendFileSync('ls-jmas.txt', updateLog);
+    } catch (fileError) {
+        console.error('Error writing log file:', fileError.message);
+    }
+    res.json({ message: 'Comments added to all tickets successfully.' })
+});
+
+// Endpoint to serve the log file for Cloned Defects still Defects 
+app.get('/api/tickets/comment-for-cloned-defects-still-defects/logs', (req, res) => {
+    const logFilePath = path.join(__dirname, 'ls-jmas.txt');
+    
+    fs.readFile(logFilePath, 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading log file:', err.message);
+            return res.status(500).send('Error reading log file');
+        }
+        res.send(data);
+    });
 });
 
 // Helper function to extract SR number & CR Number(SalesForce CR) from HTML string, only extract numbers

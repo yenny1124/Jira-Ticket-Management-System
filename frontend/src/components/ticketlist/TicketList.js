@@ -44,7 +44,7 @@ const fieldOptions = [
 
 const TicketList = () => {
     const [tickets, setTickets] = useState([]);
-    const [jql, setJql] = useState('project = LS'); // Default JQL query
+    const [jql, setJql] = useState(null); // Default JQL query
     const [error, setError] = useState(null);
     const [selectedColumns, setSelectedColumns] = useState(columnOptions.map(option => option.value));; // Initially select all columns
     const [selectedFilter, setSelectedFilter] = useState(null);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Select from 'react-select';
+import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import './automationlist.css';
@@ -33,29 +34,14 @@ const filters = [
     { name: 'Sync SR/CRs to Bugs', jql: "project = LS AND (issueFunction in linkedIssuesOf(\"type=Defect\", \"is cloned by\")) and (\"SR Number\" is EMPTY OR \"SalesForce CR\" is EMPTY)" },
 ];
 
-const fieldOptions = [
-    { label: 'Target Release', value: 'customfield_17644' },
-    { label: 'Target Version', value: 'customfield_11200' },
-    { label: 'Components', value: 'components' },
-    { label: 'SR Number', value: 'customfield_17643' },
-    { label: 'Salesforce CR', value: 'customfield_17687' },
-    { label: 'Comment', value: 'comment' },
-];
-
 const AutomationList = () => {
     const [tickets, setTickets] = useState([]);
-    const [jql, setJql] = useState('project = LS'); // Default JQL query
+    const [jql, setJql] = useState(null); // Default JQL query
     const [error, setError] = useState(null);
+    const [logContent, setLogContent] = useState('');
     const [selectedColumns, setSelectedColumns] = useState(columnOptions.map(option => option.value));; // Initially select all columns
     const [selectedFilter, setSelectedFilter] = useState(null);
-    const [selectedField, setSelectedField] = useState(null); // ***
-    const [comment, setComment] = useState(''); // State for comment input
     const [successMessage, setSuccessMessage] = useState('');
-    const [components, setComponents] = useState(''); // State for components input
-    const [customfield_17644, setCustomfield_17644] = useState(''); // State for targetrelease (customfield_17644) input
-    const [customfield_11200, setCustomfield_11200] = useState(''); // State for targetversion (customfield_11200) input
-    const [customfield_17643, setCustomfield_17643] = useState(''); // State for SR Number (customfield_17643) input
-    const [customfield_17687, setCustomfield_17687] = useState(''); // State for SalesForce CR (customfield_17687) input
 
     // function to fetch tickets
     const fetchTickets = async (query) => {
@@ -81,7 +67,6 @@ const AutomationList = () => {
         setJql(filterJql); // Set the JQL query in the search bar
         fetchTickets(filterJql);
         setSelectedFilter(selectedOption); // Set the selected filter
-        console.log("Selected Filter:", selectedOption); // Debug log
     };
 
     // function to handle selecting columns
@@ -132,49 +117,106 @@ const AutomationList = () => {
     };
 
     // function to handle syncing SR/CRs to Bugs
-    const handleSyncSRCRtoBugs = async (e) => {
-        e.preventDefault();
-        if (selectedFilter) {
-            try {
-                const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tickets/sync-sr-cr-numbers`, { jql: selectedFilter.value });
-                console.log(response.data);
-                setSuccessMessage('SR/CR Numbers synced successfully!');
-            } catch (err) {
-                console.error('Error syncing SR/CR Numbers:', err.message);
-            }
+    const handleSyncSRCRtoBugs = async (event) => {
+        event.preventDefault();
+        setError(null);
+        setSuccessMessage(null); // Clear previous success message
+        try {
+            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tickets/sync-sr-cr-numbers`, null, {
+                params: {
+                    jql: 'project = LS AND (issueFunction in linkedIssuesOf("type=Defect", "is cloned by")) and ("SR Number" is EMPTY OR "SalesForce CR" is EMPTY)'
+                }
+            });
+            console.log(response.data);
+            setSuccessMessage('SR/CR Numbers synced successfully!');
+            console.log('Success message set'); // Debugging line
+        } catch (error) {
+            console.error('Error syncing SR/CR numbers:', error);
+            setError('Error syncing SR/CR numbers');
         }
     };
 
-    // function to add comments
-    const handleAddCommenttoEachAssignee = async (e) => {
-        e.preventDefault();
-        if (!jql) {
-            setError('Please select a filter/query');
-            return;
+    // function to add comments for Missing Primary Component
+    const handleCommentForMissingPrimaryComponent = async (event) => {
+        event.preventDefault();
+        setError(null);
+        setSuccessMessage(null); // Clear previous success message
+        try {
+            const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tickets/comment-for-missing-primary-component`, null, {
+                params: {
+                    jql: 'filter = CurrentRelease AND status not in (Open, Targeted, Committed, Declined, Published, "Validated/Completed") AND component not in (TAS, TS, TC-GUI, Documentation, CI, "Mobile App", Licensing, Build, "License Tool or Server", System) AND type != Task AND type != Epic'
+                }
+            });
+            console.log(response.data);
+            setSuccessMessage('Comments added for Missing Primary Component successfully.');
+            console.log('Success message set'); // Debugging line
+        } catch (err) {
+            console.error('Error adding comments:', err);
+            setError('Error adding comments');
         }
-        if (!comment) {
-            setError('Please enter a comment.');
-            return;
+    };
+
+    // function to add comments for Cloned Defects Still Defects
+    const handleCommentForClonedDefectsStillDefects = async (event) => {
+        event.preventDefault();
+        console.log('handleCommentForClonedDefectsStillDefects triggered'); // Debugging line
+        setError(null);
+        setSuccessMessage(null); // Clear previous success message
+        try {
+            console.log('Starting API request'); // Debugging line
+            const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tickets/comment-for-cloned-defects-still-defects`, null, {
+                params: {
+                    jql: 'filter = CurrentRelease AND (issueFunction in linkedIssuesOf("type=Defect", "is cloned by")) and type = Defect'
+                }
+            });
+            console.log('Response:', response.data); // Debugging line
+            setSuccessMessage('Comments added for Cloned Defects Still Defects successfully.');
+            console.log('Success message set'); // Debugging line
+        } catch (err) {
+            console.error('Error adding comments:', err);
+            setError('Error adding comments');
         }
+    };
+
+    // Function to fetch and display the log content
+    const fetchLogContentForSyncSRCRtoBugs = async () => {
         setError(null);
         try {
-            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tickets/comments`, 
-                {
-                    body: comment // This should be inside the request payload
-                }, 
-                {
-                    params: { jql },
-                    headers: {'Content-Type': 'application/json'}
-                }
-            );
-            console.log('Comment added:', response.data);
-            setComment(''); // Clear the comment input
-            setSelectedField(null); // Reset the selected field combo box
-            setSuccessMessage('Comment added successfully!'); // Set success message
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tickets/sync-sr-cr-numbers/logs`);
+            console.log('Log content fetched:', response.data); // Debugging line
+            setLogContent(response.data);
+            setSuccessMessage('Log file loaded successfully.');
         } catch (err) {
             setError(err.message);
         }
     };
+
+    // Function to fetch and display the log content
+    const fetchLogContentForMissingPrimaryComponent  = async () => {
+        setError(null);
+        try {
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tickets/comment-for-missing-primary-component/logs`);
+            console.log('Log content fetched:', response.data); // Debugging line 
+            setLogContent(response.data);
+            setSuccessMessage('Log file loaded successfully.');
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    // Function to fetch and display the log content
+    const fetchLogContentForClonedDefectsStillDefects = async () => {
+        setError(null);
+        try {
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tickets/comment-for-cloned-defects-still-defects/logs`);
+            console.log('Log content fetched:', response.data); // Debugging line
+            setLogContent(response.data);
+            setSuccessMessage('Log file loaded successfully.');
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
 
   return (
     <div className="ticket-list">
@@ -203,23 +245,62 @@ const AutomationList = () => {
         </div>
         <div className='container2'>
             {/* Action Form for Missing Primary Component */}
-            {selectedFilter?.label === 'Test Filter' && (
-                <form onSubmit={handleAddCommenttoEachAssignee}>
+            {selectedFilter?.label === 'Missing Primary Component' && (
+                <form onSubmit={handleCommentForMissingPrimaryComponent}>
                     <div>
-                        <button type="submit" className='action-button-missing-primary-comp'>Add a comment:
- @assignee</button>
+                        <button type="submit" className='action-button-missing-primary-component'>
+                            Add Comment for Missing Primary Component
+                        </button>
                     </div>
                 </form>
-            )}           
+            )}       
+            {/* Button to fetch and view the log for Missing Primary Component */}
+            {selectedFilter?.label === 'Missing Primary Component' && (
+                <div>
+                    <button onClick={fetchLogContentForMissingPrimaryComponent} className='view-log-button'>
+                        View the Log
+                    </button>
+                </div>
+            )}  
+
             {/* Action Form for Cloned Defects still Defects */}
+            {selectedFilter?.label === 'Cloned Defects still Defects' && (
+                <form onSubmit={handleCommentForClonedDefectsStillDefects}>
+                    <div>
+                        <button type="submit" className='action-button-cloned-defects-still-defects'>
+                        Add Comment for Cloned Defects still Defects
+                        </button>
+                    </div>
+                </form>
+            )}        
+            {/* Button to fetch and view the log for Cloned Defects still Defects */}
+            {selectedFilter?.label === 'Cloned Defects still Defects' && (
+                <div>
+                    <button onClick={fetchLogContentForClonedDefectsStillDefects} className='view-log-button'>
+                        View the Log
+                    </button>
+                </div>
+            )}
+
             {/* Action Form for Sync SR/CRs to Bugs */}
             {selectedFilter?.label === 'Sync SR/CRs to Bugs' && (
                 <form onSubmit={handleSyncSRCRtoBugs}>
                     <div>
-                        <button type="submit" className='action-button-sync-sr-cr'>Sync SR/CR Numbers from Linked Tickets</button>
+                        <button type="submit" className='action-button-sync-sr-cr'>
+                            Sync SR/CR Numbers from Linked Tickets
+                        </button>
                     </div>
                 </form>
             )}
+            {/* Button to fetch and view the log for Sync SR/CRs to Bugs */}
+            {selectedFilter?.label === 'Sync SR/CRs to Bugs' && (
+                <div>
+                    <button onClick={fetchLogContentForSyncSRCRtoBugs} className='view-log-button'>
+                        View the Log
+                    </button>
+                </div>
+            )}
+
             {/* Dropdown for columns */}
             <DropdownButton id="dropdown-basic-button" title="Columns" className='dropdown-columns'>
                 {columnOptions.map(option => (
@@ -238,7 +319,8 @@ const AutomationList = () => {
             </DropdownButton>
         </div>
         {successMessage && <p>{successMessage}</p>}
-        {error && <p>Error: {error}</p>}
+        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {logContent && <pre>{logContent}</pre>}
         {/* Table for columns by dropdown */}
         <table>
             <thead>
