@@ -43,7 +43,7 @@ const AutomationList = () => {
     const [selectedFilter, setSelectedFilter] = useState(null);
     const [successMessage, setSuccessMessage] = useState('');
 
-    // function to fetch tickets
+    // Function to fetch tickets
     const fetchTickets = async (query) => {
         setError(null);
         try {
@@ -56,12 +56,12 @@ const AutomationList = () => {
         }
     };
 
-    // function to handle search 
+    // Function to handle search 
     const handleSearch = () => {
         fetchTickets(jql);
     };
 
-    // function to handle selecting a filter
+    // Function to handle selecting a filter
     const handleSelectFilter = (selectedOption) => {
         const filterJql = selectedOption ? selectedOption.value : '';
         setJql(filterJql); // Set the JQL query in the search bar
@@ -69,7 +69,7 @@ const AutomationList = () => {
         setSelectedFilter(selectedOption); // Set the selected filter
     };
 
-    // function to handle selecting columns
+    // Function to handle selecting columns
     const handleColumnChange = (columnValue) => {
         const updatedColumns = selectedColumns.includes(columnValue)
             ? selectedColumns.filter(col => col !== columnValue)
@@ -77,7 +77,7 @@ const AutomationList = () => {
         setSelectedColumns(updatedColumns);
     };
 
-    // function to format descriptions
+    // Function to format descriptions
     const formatDescription = (description) => {
         if (!description) return null;
     
@@ -106,7 +106,7 @@ const AutomationList = () => {
         return { __html: formattedDescription };
     };
 
-    // function to format date values 
+    // Function to format date values 
     const formatDate = (dateString) => {
         if (!dateString) return ''; // Return an empty string if dateString is null or undefined
         const date = new Date(dateString);
@@ -116,7 +116,7 @@ const AutomationList = () => {
         return `${day}/${month}/${year}`;
     };
 
-    // function to handle syncing SR/CRs to Bugs
+    // Function to handle syncing SR/CRs to Bugs
     const handleSyncSRCRtoBugs = async (event) => {
         event.preventDefault();
         setError(null);
@@ -136,7 +136,7 @@ const AutomationList = () => {
         }
     };
 
-    // function to add comments for Missing Primary Component
+    // Function to add comments for Missing Primary Component
     const handleCommentForMissingPrimaryComponent = async (event) => {
         event.preventDefault();
         setError(null);
@@ -156,7 +156,7 @@ const AutomationList = () => {
         }
     };
 
-    // function to add comments for Cloned Defects Still Defects
+    // Function to add comments for Cloned Defects Still Defects
     const handleCommentForClonedDefectsStillDefects = async (event) => {
         event.preventDefault();
         console.log('handleCommentForClonedDefectsStillDefects triggered'); // Debugging line
@@ -186,6 +186,13 @@ const AutomationList = () => {
             console.log('Log content fetched:', response.data); // Debugging line
             setLogContent(response.data);
             setSuccessMessage('Log file loaded successfully.');
+
+            // Open the log content in a new window
+            const logWindow = window.open('', '_blank');
+            logWindow.document.write('<html><head><title>Log Content</title></head><body>');
+            logWindow.document.write('<pre>' + response.data + '</pre>');
+            logWindow.document.write('</body></html>');
+            logWindow.document.close();
         } catch (err) {
             setError(err.message);
         }
@@ -199,6 +206,13 @@ const AutomationList = () => {
             console.log('Log content fetched:', response.data); // Debugging line 
             setLogContent(response.data);
             setSuccessMessage('Log file loaded successfully.');
+
+            // Open the log content in a new window
+            const logWindow = window.open('', '_blank');
+            logWindow.document.write('<html><head><title>Log Content</title></head><body>');
+            logWindow.document.write('<pre>' + response.data + '</pre>');
+            logWindow.document.write('</body></html>');
+            logWindow.document.close();
         } catch (err) {
             setError(err.message);
         }
@@ -212,6 +226,13 @@ const AutomationList = () => {
             console.log('Log content fetched:', response.data); // Debugging line
             setLogContent(response.data);
             setSuccessMessage('Log file loaded successfully.');
+
+            // Open the log content in a new window
+            const logWindow = window.open('', '_blank');
+            logWindow.document.write('<html><head><title>Log Content</title></head><body>');
+            logWindow.document.write('<pre>' + response.data + '</pre>');
+            logWindow.document.write('</body></html>');
+            logWindow.document.close();
         } catch (err) {
             setError(err.message);
         }
@@ -320,7 +341,7 @@ const AutomationList = () => {
         </div>
         {successMessage && <p>{successMessage}</p>}
         {error && <p style={{ color: 'red' }}>{error}</p>}
-        {logContent && <pre>{logContent}</pre>}
+        {/* {logContent && <pre>{logContent}</pre>} */}
         {/* Table for columns by dropdown */}
         <table>
             <thead>
