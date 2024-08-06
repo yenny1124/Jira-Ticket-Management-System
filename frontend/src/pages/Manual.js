@@ -5,7 +5,7 @@ ManualList
 const Manual = () => {
     return (
         <div className="manual">
-            <h1 style={{ textAlign: 'center', paddingTop: '20px' }}>Manual Page</h1>
+            <h1 style={{ textAlign: 'center', paddingTop: '20px' }}>Manual</h1>
             <ManualList/>
         </div>
     );
