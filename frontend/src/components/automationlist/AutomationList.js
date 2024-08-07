@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Select from 'react-select';
-import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
-import './automationlist.css';
+import React, { useState, useEffect } from 'react'; // Import necessary React hooks and modules
+import axios from 'axios'; // Import axios for making HTTP requests
+import Select from 'react-select'; // Import Select component from react-select for dropdowns
+import Dropdown from 'react-bootstrap/Dropdown'; // Import Dropdown component from react-bootstrap
+import DropdownButton from 'react-bootstrap/DropdownButton'; // Import DropdownButton component from react-bootstrap
+import './automationlist.css'; // Import CSS for styling the component
 
+// Define column options for the tickets table
 const columnOptions = [
     { value: 'issuetype', label: 'Type' },
     { value: 'key', label: 'Key' },
@@ -27,66 +27,69 @@ const columnOptions = [
     { value: 'productLine/engproj/area', label: 'ProductLine/Eng Proj/Area' },
 ];
 
+// Define filter options for the tickets
 const filters = [
     { name: 'Test Filter', jql: 'assignee = ychoi' },
     { name: 'Missing Primary Component', jql: 'filter = CurrentRelease AND status not in (Open, Targeted, Committed, Declined, Published, "Validated/Completed") AND component not in (TAS, TS, TC-GUI, Documentation, CI, "Mobile App", Licensing, Build, "License Tool or Server", System) AND type != Task AND type != Epic' },
     { name: 'Cloned Defects still Defects', jql: 'filter = CurrentRelease AND (issueFunction in linkedIssuesOf(\"type=Defect\", \"is cloned by\")) and type =Defect' },
     { name: 'Sync SR/CRs to Bugs', jql: "project = LS AND (issueFunction in linkedIssuesOf(\"type=Defect\", \"is cloned by\")) and (\"SR Number\" is EMPTY OR \"SalesForce CR\" is EMPTY)" },
+    { name: 'Update Customer Information', jql: 'filter = CurrentRelease AND type = Bug AND (issueFunction in linkedIssuesOf("type=Defect", "is cloned by")) and "LS Customer" is EMPTY' }
 ];
 
 const AutomationList = () => {
-    const [tickets, setTickets] = useState([]);
-    const [jql, setJql] = useState(null); // Default JQL query
-    const [error, setError] = useState(null);
-    const [logContent, setLogContent] = useState('');
-    const [selectedColumns, setSelectedColumns] = useState(columnOptions.map(option => option.value));; // Initially select all columns
-    const [selectedFilter, setSelectedFilter] = useState(null);
-    const [successMessage, setSuccessMessage] = useState('');
+    const [tickets, setTickets] = useState([]); // State to store fetched tickets
+    const [jql, setJql] = useState(null); // State to store the JQL query
+    const [error, setError] = useState(null); // State to store any errors
+    const [logContent, setLogContent] = useState(''); // State to store log content
+    const [selectedColumns, setSelectedColumns] = useState(columnOptions.map(option => option.value)); // Initially select all columns
+    const [selectedFilter, setSelectedFilter] = useState(null); // State to store the selected filter
+    const [successMessage, setSuccessMessage] = useState(''); // State to store success messages
 
-    // Function to fetch tickets
+    // Function to fetch tickets based on a JQL query
     const fetchTickets = async (query) => {
-        setError(null);
+        setError(null); // Reset error state
         try {
+            // Make a GET request to fetch tickets
             const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tickets`, {
                 params: { jql: query }
             });
-            setTickets(response.data);
+            setTickets(response.data); // Update tickets state with the fetched data
         } catch (err) {
-            setError(err.message);
+            setError(err.message); // Update error state with the error message
         }
     };
 
-    // Function to handle search 
+    // Function to handle search button click
     const handleSearch = () => {
-        fetchTickets(jql);
+        fetchTickets(jql); // Fetch tickets with the current JQL query
     };
 
     // Function to handle selecting a filter
     const handleSelectFilter = (selectedOption) => {
-        const filterJql = selectedOption ? selectedOption.value : '';
-        setJql(filterJql); // Set the JQL query in the search bar
-        fetchTickets(filterJql);
-        setSelectedFilter(selectedOption); // Set the selected filter
+        const filterJql = selectedOption ? selectedOption.value : ''; // Get the JQL query from the selected filter
+        setJql(filterJql); // Set the JQL query state
+        fetchTickets(filterJql); // Fetch tickets with the selected filter's JQL query
+        setSelectedFilter(selectedOption); // Set the selected filter state
     };
 
     // Function to handle selecting columns
     const handleColumnChange = (columnValue) => {
         const updatedColumns = selectedColumns.includes(columnValue)
-            ? selectedColumns.filter(col => col !== columnValue)
-            : [...selectedColumns, columnValue];
-        setSelectedColumns(updatedColumns);
+            ? selectedColumns.filter(col => col !== columnValue) // Remove column if already selected
+            : [...selectedColumns, columnValue]; // Add column if not selected
+        setSelectedColumns(updatedColumns); // Update selected columns state
     };
 
-    // Function to format descriptions
+    // Function to format descriptions, handling Jira markup
     const formatDescription = (description) => {
-        if (!description) return null;
+        if (!description) return null; // Return null if description is empty
     
-        // Replace {code:java} and {code} with <pre><code> tags
+        // Replace {code:java} and {code} with <pre><code> tags for code formatting
         let formattedDescription = description
             .replace(/\{code:java\}/g, '<pre><code class="language-java">')
             .replace(/\{code\}/g, '</code></pre>');
     
-        // Replace !image.png|width=518,height=391! with <img src="image.png" width="518" height="391" />
+        // Replace Jira image markup with HTML img tags
         formattedDescription = formattedDescription.replace(
             /!(\S+\.(png|jpg|jpeg|gif))\|width=(\d+),height=(\d+)!/g,
             (match, src, extension, width, height) => {
@@ -94,7 +97,7 @@ const AutomationList = () => {
             }
         );
     
-        // Replace !document.pdf! with <a href="document.pdf">document.pdf</a>
+        // Replace Jira document markup with HTML anchor tags
         formattedDescription = formattedDescription.replace(
             /!(\S+\.(pdf))!/g,
             (match, src, extension) => {
@@ -106,33 +109,34 @@ const AutomationList = () => {
         return { __html: formattedDescription };
     };
 
-    // Function to format date values 
+    // Function to format date values
     const formatDate = (dateString) => {
         if (!dateString) return ''; // Return an empty string if dateString is null or undefined
-        const date = new Date(dateString);
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = date.toLocaleString('default', { month: 'short' });
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
+        const date = new Date(dateString); // Create a new Date object
+        const day = date.getDate().toString().padStart(2, '0'); // Get day and pad with leading zero if needed
+        const month = date.toLocaleString('default', { month: 'short' }); // Get month name in short format
+        const year = date.getFullYear(); // Get full year
+        return `${day}/${month}/${year}`; // Return formatted date string
     };
 
     // Function to handle syncing SR/CRs to Bugs
     const handleSyncSRCRtoBugs = async (event) => {
-        event.preventDefault();
-        setError(null);
+        event.preventDefault(); // Prevent default form submission
+        setError(null); // Reset error state
         setSuccessMessage(null); // Clear previous success message
         try {
+            // Make a POST request to sync SR/CR numbers
             const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tickets/sync-sr-cr-numbers`, null, {
                 params: {
                     jql: 'project = LS AND (issueFunction in linkedIssuesOf("type=Defect", "is cloned by")) and ("SR Number" is EMPTY OR "SalesForce CR" is EMPTY)'
                 }
             });
-            console.log(response.data);
-            setSuccessMessage('SR/CR Numbers synced successfully!');
+            console.log(response.data); // Debugging line
+            setSuccessMessage('SR/CR Numbers synced successfully!'); // Set success message
             console.log('Success message set'); // Debugging line
         } catch (error) {
-            console.error('Error syncing SR/CR numbers:', error);
-            setError('Error syncing SR/CR numbers');
+            console.error('Error syncing SR/CR numbers:', error); // Log error
+            setError('Error syncing SR/CR numbers'); // Set error message
         }
     };
 
@@ -147,7 +151,7 @@ const AutomationList = () => {
                     jql: 'filter = CurrentRelease AND status not in (Open, Targeted, Committed, Declined, Published, "Validated/Completed") AND component not in (TAS, TS, TC-GUI, Documentation, CI, "Mobile App", Licensing, Build, "License Tool or Server", System) AND type != Task AND type != Epic'
                 }
             });
-            console.log(response.data);
+            console.log(response.data); // Debugging line
             setSuccessMessage('Comments added for Missing Primary Component successfully.');
             console.log('Success message set'); // Debugging line
         } catch (err) {
@@ -158,83 +162,88 @@ const AutomationList = () => {
 
     // Function to add comments for Cloned Defects Still Defects
     const handleCommentForClonedDefectsStillDefects = async (event) => {
-        event.preventDefault();
+        event.preventDefault(); // Prevent default form submission
         console.log('handleCommentForClonedDefectsStillDefects triggered'); // Debugging line
-        setError(null);
+        setError(null); // Reset error state
         setSuccessMessage(null); // Clear previous success message
         try {
             console.log('Starting API request'); // Debugging line
+            // Make a PUT request to add comments for Cloned Defects Still Defects
             const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tickets/comment-for-cloned-defects-still-defects`, null, {
                 params: {
                     jql: 'filter = CurrentRelease AND (issueFunction in linkedIssuesOf("type=Defect", "is cloned by")) and type = Defect'
                 }
             });
             console.log('Response:', response.data); // Debugging line
-            setSuccessMessage('Comments added for Cloned Defects Still Defects successfully.');
+            setSuccessMessage('Comments added for Cloned Defects Still Defects successfully.'); // Set success message
             console.log('Success message set'); // Debugging line
         } catch (err) {
-            console.error('Error adding comments:', err);
-            setError('Error adding comments');
+            console.error('Error adding comments:', err); // Log error
+            setError('Error adding comments'); // Set error message
         }
     };
 
-    // Function to fetch and display the log content
+
+    // Function to fetch and display the log content for Sync SR/CRs to Bugs
     const fetchLogContentForSyncSRCRtoBugs = async () => {
-        setError(null);
+        setError(null); // Reset error state
         try {
+            // Make a GET request to fetch the log content
             const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tickets/sync-sr-cr-numbers/logs`);
             console.log('Log content fetched:', response.data); // Debugging line
-            setLogContent(response.data);
-            setSuccessMessage('Log file loaded successfully.');
+            setLogContent(response.data); // Set log content state
+            setSuccessMessage('Log file loaded successfully.'); // Set success message
 
             // Open the log content in a new window
-            const logWindow = window.open('', '_blank');
-            logWindow.document.write('<html><head><title>Log Content</title></head><body>');
-            logWindow.document.write('<pre>' + response.data + '</pre>');
-            logWindow.document.write('</body></html>');
-            logWindow.document.close();
+            const logWindow = window.open('', '_blank'); // Open a new blank window
+            logWindow.document.write('<html><head><title>Log Content</title></head><body>'); // Write HTML structure
+            logWindow.document.write('<pre>' + response.data + '</pre>'); // Write log content in <pre> tag
+            logWindow.document.write('</body></html>'); // Close HTML structure
+            logWindow.document.close(); // Close the document to render content
         } catch (err) {
-            setError(err.message);
+            setError(err.message); // Set error message
         }
     };
 
-    // Function to fetch and display the log content
-    const fetchLogContentForMissingPrimaryComponent  = async () => {
-        setError(null);
+    // Function to fetch and display the log content for Missing Primary Component
+    const fetchLogContentForMissingPrimaryComponent = async () => {
+        setError(null); // Reset error state
         try {
+            // Make a GET request to fetch the log content
             const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tickets/comment-for-missing-primary-component/logs`);
-            console.log('Log content fetched:', response.data); // Debugging line 
-            setLogContent(response.data);
-            setSuccessMessage('Log file loaded successfully.');
+            console.log('Log content fetched:', response.data); // Debugging line
+            setLogContent(response.data); // Set log content state
+            setSuccessMessage('Log file loaded successfully.'); // Set success message
 
             // Open the log content in a new window
-            const logWindow = window.open('', '_blank');
-            logWindow.document.write('<html><head><title>Log Content</title></head><body>');
-            logWindow.document.write('<pre>' + response.data + '</pre>');
-            logWindow.document.write('</body></html>');
-            logWindow.document.close();
+            const logWindow = window.open('', '_blank'); // Open a new blank window
+            logWindow.document.write('<html><head><title>Log Content</title></head><body>'); // Write HTML structure
+            logWindow.document.write('<pre>' + response.data + '</pre>'); // Write log content in <pre> tag
+            logWindow.document.write('</body></html>'); // Close HTML structure
+            logWindow.document.close(); // Close the document to render content
         } catch (err) {
-            setError(err.message);
+            setError(err.message); // Set error message
         }
     };
 
-    // Function to fetch and display the log content
+    // Function to fetch and display the log content for Cloned Defects Still Defects
     const fetchLogContentForClonedDefectsStillDefects = async () => {
-        setError(null);
+        setError(null); // Reset error state
         try {
+            // Make a GET request to fetch the log content
             const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tickets/comment-for-cloned-defects-still-defects/logs`);
             console.log('Log content fetched:', response.data); // Debugging line
-            setLogContent(response.data);
-            setSuccessMessage('Log file loaded successfully.');
+            setLogContent(response.data); // Set log content state
+            setSuccessMessage('Log file loaded successfully.'); // Set success message
 
             // Open the log content in a new window
-            const logWindow = window.open('', '_blank');
-            logWindow.document.write('<html><head><title>Log Content</title></head><body>');
-            logWindow.document.write('<pre>' + response.data + '</pre>');
-            logWindow.document.write('</body></html>');
-            logWindow.document.close();
+            const logWindow = window.open('', '_Is-jmas'); // Open a new blank window
+            logWindow.document.write('<html><head><title>Log Content</title></head><body>'); // Write HTML structure
+            logWindow.document.write('<pre>' + response.data + '</pre>'); // Write log content in <pre> tag
+            logWindow.document.write('</body></html>'); // Close HTML structure
+            logWindow.document.close(); // Close the document to render content
         } catch (err) {
-            setError(err.message);
+            setError(err.message); // Set error message
         }
     };
 
@@ -342,6 +351,7 @@ const AutomationList = () => {
         {successMessage && <p>{successMessage}</p>}
         {error && <p style={{ color: 'red' }}>{error}</p>}
         {/* {logContent && <pre>{logContent}</pre>} */}
+        
         {/* Table for columns by dropdown */}
         <table>
             <thead>

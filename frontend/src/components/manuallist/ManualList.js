@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Select from 'react-select';
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
-import './manuallist.css';
+import React, { useState, useEffect } from 'react'; // Import necessary React hooks and modules
+import axios from 'axios'; // Import axios for making HTTP requests
+import Select from 'react-select'; // Import Select component from react-select for dropdowns
+import Dropdown from 'react-bootstrap/Dropdown'; // Import Dropdown component from react-bootstrap
+import DropdownButton from 'react-bootstrap/DropdownButton'; // Import DropdownButton component from react-bootstrap
+import './manuallist.css'; // Import CSS for styling the component
 
+// Define column options for the tickets table
 const columnOptions = [
     { value: 'issuetype', label: 'Type' },
     { value: 'key', label: 'Key' },
@@ -26,13 +27,16 @@ const columnOptions = [
     { value: 'productLine/engproj/area', label: 'ProductLine/Eng Proj/Area' },
 ];
 
+// Define filter options for the tickets
 const filters = [
     { name: 'Test Filter', jql: 'assignee = ychoi' },
     { name: 'Missing Primary Component', jql: 'filter = CurrentRelease AND status not in (Open, Targeted, Committed, Declined, Published, "Validated/Completed") AND component not in (TAS, TS, TC-GUI, Documentation, CI, "Mobile App", Licensing, Build, "License Tool or Server", System) AND type != Task AND type != Epic' },
     { name: 'Cloned Defects still Defects', jql: 'filter = CurrentRelease AND (issueFunction in linkedIssuesOf(\"type=Defect\", \"is cloned by\")) and type =Defect' },
     { name: 'Sync SR/CRs to Bugs', jql: "project = LS AND (issueFunction in linkedIssuesOf(\"type=Defect\", \"is cloned by\")) and (\"SR Number\" is EMPTY OR \"SalesForce CR\" is EMPTY)" },
+    { name: 'Update Customer Information', jql: 'filter = CurrentRelease AND type = Bug AND (issueFunction in linkedIssuesOf("type=Defect", "is cloned by")) and "LS Customer" is EMPTY' }
 ];
 
+// Define field options for updating fields in tickets
 const fieldOptions = [
     { label: 'Target Release', value: 'customfield_17644' },
     { label: 'Target Version', value: 'customfield_11200' },
@@ -43,60 +47,62 @@ const fieldOptions = [
 ];
 
 const ManualList = () => {
-    const [tickets, setTickets] = useState([]);
-    const [jql, setJql] = useState(null); // Default JQL query
-    const [error, setError] = useState(null);
-    const [selectedColumns, setSelectedColumns] = useState(columnOptions.map(option => option.value));; // Initially select all columns
-    const [selectedFilter, setSelectedFilter] = useState(null);
-    const [selectedField, setSelectedField] = useState(null); // ***
+    const [tickets, setTickets] = useState([]); // State to store tickets
+    const [jql, setJql] = useState(null); // State for JQL query
+    const [error, setError] = useState(null); // State for errors
+    const [selectedColumns, setSelectedColumns] = useState(columnOptions.map(option => option.value)); // Initially select all columns
+    const [selectedFilter, setSelectedFilter] = useState(null); // State for selected filter
+    const [selectedField, setSelectedField] = useState(null); // State for selected field
     const [comment, setComment] = useState(''); // State for comment input
-    const [successMessage, setSuccessMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState(''); // State for success messages
     const [components, setComponents] = useState(''); // State for components input
-    const [customfield_17644, setCustomfield_17644] = useState(''); // State for targetrelease (customfield_17644) input
-    const [customfield_11200, setCustomfield_11200] = useState(''); // State for targetversion (customfield_11200) input
+    const [customfield_17644, setCustomfield_17644] = useState(''); // State for target release (customfield_17644) input
+    const [customfield_11200, setCustomfield_11200] = useState(''); // State for target version (customfield_11200) input
     const [customfield_17643, setCustomfield_17643] = useState(''); // State for SR Number (customfield_17643) input
     const [customfield_17687, setCustomfield_17687] = useState(''); // State for SalesForce CR (customfield_17687) input
-
-    // function to fetch tickets
+   
+    // Function to fetch tickets based on JQL query
     const fetchTickets = async (query) => {
-        setError(null);
+        setError(null); // Reset error state
         try {
+            // Make GET request to fetch tickets
             const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tickets`, {
                 params: { jql: query }
             });
-            setTickets(response.data);
+            setTickets(response.data); // Set tickets state with fetched data
         } catch (err) {
-            setError(err.message);
+            setError(err.message); // Set error state if request fails
         }
     };
 
-    // function to handle search 
+    // Function to handle search button click
     const handleSearch = () => {
-        fetchTickets(jql);
+        fetchTickets(jql); // Fetch tickets with the current JQL query
     };
 
-    // function to handle selecting columns
+    // Function to handle selecting columns for display
     const handleColumnChange = (columnValue) => {
+        // Toggle column selection
         const updatedColumns = selectedColumns.includes(columnValue)
             ? selectedColumns.filter(col => col !== columnValue)
             : [...selectedColumns, columnValue];
-        setSelectedColumns(updatedColumns);
+        setSelectedColumns(updatedColumns); // Update selected columns state
     };
 
-    // function to handle selecting a filter 
+    // Function to handle selecting a filter
     const handleSelectFilter = (selectedOption) => {
         const filterJql = selectedOption ? selectedOption.value : '';
         setJql(filterJql); // Set the JQL query in the search bar
-        fetchTickets(filterJql);
+        fetchTickets(filterJql); // Fetch tickets with the selected filter
         setSelectedFilter(null); // Reset the filter to default option
     };
 
-    // function to handle selecting a field in tickets *** 
+    // Function to handle selecting a field for update
     const handleSelectField = (selectedOption) => {
         setSelectedField(selectedOption); // Set the selected field
     };
 
-    // function to format descriptions
+    // Function to format descriptions with code and images
     const formatDescription = (description) => {
         if (!description) return null;
     
@@ -125,188 +131,190 @@ const ManualList = () => {
         return { __html: formattedDescription };
     };
 
-    // function to format date values 
+    // Function to format date values
     const formatDate = (dateString) => {
         if (!dateString) return ''; // Return an empty string if dateString is null or undefined
         const date = new Date(dateString);
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = date.toLocaleString('default', { month: 'short' });
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
+        const day = date.getDate().toString().padStart(2, '0'); // Format day with leading zero
+        const month = date.toLocaleString('default', { month: 'short' }); // Get abbreviated month name
+        const year = date.getFullYear(); // Get full year
+        return `${day}/${month}/${year}`; // Return formatted date
     };
 
-    // function to add comments
+    // Function to add comments to tickets
     const handleAddCommenttoEachFilter = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default form submission
         if (!jql) {
-            setError('Please select a filter/query');
+            setError('Please select a filter/query'); // Set error if no filter/query is selected
             return;
         }
         if (!comment) {
-            setError('Please enter a comment.');
+            setError('Please enter a comment.'); // Set error if no comment is entered
             return;
         }
-        setError(null);
+        setError(null); // Reset error state
         try {
+            // Make POST request to add comment
             const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tickets/comments`, 
                 {
-                    body: comment // This should be inside the request payload
+                    body: comment // Include comment in request payload
                 }, 
                 {
-                    params: { jql },
-                    headers: {'Content-Type': 'application/json'}
+                    params: { jql }, // Include JQL query in request parameters
+                    headers: {'Content-Type': 'application/json'} // Set content type header
                 }
             );
             console.log('Comment added:', response.data);
-            setComment(''); // Clear the comment input
+            setComment(''); // Clear the comment input field
             setSelectedField(null); // Reset the selected field combo box
             setSuccessMessage('Comment added successfully!'); // Set success message
         } catch (err) {
-            setError(err.message);
+            setError(err.message); // Set error message if request fails
         }
     };
 
-    // function to update components field
+    // Function to update components field
     const handleUpdateComponents = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default form submission
         if (!jql) {
-            setError('Please select a filter/query');
+            setError('Please select a filter/query'); // Set error if no filter/query is selected
             return;
         }
         if (!components) {
-            setError('Please enter components.');
+            setError('Please enter components.'); // Set error if no components are entered
             return;
         }
-        setError(null);
+        setError(null); // Reset error state
         try {
+            // Make PUT request to update components
             const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tickets/updateComponents`, 
-                { components: components.split(',').map(comp => ({ name: comp.trim() })) }, 
-                { params: { jql }, 
-                    headers: { 'Content-Type': 'application/json' } }
+                { components: components.split(',').map(comp => ({ name: comp.trim() })) }, // Format components input
+                { params: { jql }, // Include JQL query in request parameters
+                    headers: { 'Content-Type': 'application/json' } } // Set content type header
             );
-            console.log('Components updated:', response.data);
-            setComponents(''); // Clear the components input
+            console.log('Components updated:', response.data); // Debugging line
+            setComponents(''); // Clear the components input field
             setSelectedField(null); // Reset the selected field combo box
-            setSuccessMessage('Components updated successfully!');
+            setSuccessMessage('Components updated successfully!'); // Set success message
         } catch (err) {
-            setError(err.message);
+            setError(err.message); // Set error message if request fails
         }
     };
 
-    // function to update targetrelease field
+    // Function to update target release field
     const handleUpdateTargetRelease = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default form submission
         if (!jql) {
-            setError('Please select a filter/query');
+            setError('Please select a filter/query'); // Set error if no filter/query is selected
             return;
         }
         if (!customfield_17644) {
-            setError('Please enter target release.');
+            setError('Please enter target release.'); // Set error if no target release is entered
             return;
         }
-        setError(null);
+        setError(null); // Reset error state
         try {
+            // Make PUT request to update target release
             const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tickets/updateTargetRelease`, 
-                { customfield_17644: customfield_17644.split(',').map(targetRel => ({ name: targetRel.trim() })) }, 
-                { params: { jql }, 
-                    headers: { 'Content-Type': 'application/json' } 
-                }
+                { customfield_17644: customfield_17644.split(',').map(targetRel => ({ name: targetRel.trim() })) }, // Format target release input
+                { params: { jql }, // Include JQL query in request parameters
+                    headers: { 'Content-Type': 'application/json' } } // Set content type header
             );
-            console.log('Target Release updated:', response.data);
-            setCustomfield_17644(''); // Clear the targer release input
+            console.log('Target Release updated:', response.data); // Debugging line
+            setCustomfield_17644(''); // Clear the target release input field
             setSelectedField(null); // Reset the selected field combo box
-            setSuccessMessage('Target Release updated successfully!');
+            setSuccessMessage('Target Release updated successfully!'); // Set success message
         } catch (err) {
-            setError(err.message);
+            setError(err.message); // Set error message if request fails
         }
     };
 
-    // function to update targetversion field
+    // Function to update target version field
     const handleUpdateTargetVersion = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default form submission
         if (!jql) {
-            setError('Please select a filter/query');
+            setError('Please select a filter/query'); // Set error if no filter/query is selected
             return;
         }
         if (!customfield_11200) {
-            setError('Please enter target version.');
+            setError('Please enter target version.'); // Set error if no target version is entered
             return;
         }
-        setError(null);
+        setError(null); // Reset error state
         try {
+            // Make PUT request to update target version
             const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tickets/updateTargetVersion`, 
-                { customfield_11200: customfield_11200.split(',').map(targetVer => ({ name: targetVer.trim() })) }, 
-                { params: { jql }, 
-                    headers: { 'Content-Type': 'application/json' } }
+                { customfield_11200: customfield_11200.split(',').map(targetVer => ({ name: targetVer.trim() })) }, // Format target version input
+                { params: { jql }, // Include JQL query in request parameters
+                    headers: { 'Content-Type': 'application/json' } } // Set content type header
             );
-            console.log('Target Version updated:', response.data);
-            setCustomfield_11200(''); // Clear the target version input
+            console.log('Target Version updated:', response.data); // Debugging line
+            setCustomfield_11200(''); // Clear the target version input field
             setSelectedField(null); // Reset the selected field combo box
-            setSuccessMessage('Target Version updated successfully!');
+            setSuccessMessage('Target Version updated successfully!'); // Set success message
         } catch (err) {
-            setError(err.message);
+            setError(err.message); // Set error message if request fails
         }
     };
 
-    // function to update SR Number field
+    // Function to update SR Number field
     const handleUpdateSRNumber = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default form submission
         if (!jql) {
-            setError('Please select a filter/query');
+            setError('Please select a filter/query'); // Set error if no filter/query is selected
             return;
         }
         if (!customfield_17643) {
-            setError('Please enter SR Number.');
+            setError('Please enter SR Number.'); // Set error if no SR Number is entered
             return;
         }
-        setError(null);
+        setError(null); // Reset error state
         try {
+            // Make PUT request to update SR Number
             const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tickets/updateSRnumber`, 
-                { customfield_17643: customfield_17643}, 
-                { params: { jql }, 
-                    headers: { 'Content-Type': 'application/json' } 
-                }
+                { customfield_17643: customfield_17643}, // Include SR Number in request payload
+                { params: { jql }, // Include JQL query in request parameters
+                    headers: { 'Content-Type': 'application/json' } } // Set content type header
             );
-            console.log('SR Number updated:', response.data);
-            setCustomfield_17643(''); // Clear the SR Number input
+            console.log('SR Number updated:', response.data); // Debugging line
+            setCustomfield_17643(''); // Clear the SR Number input field
             setSelectedField(null); // Reset the selected field combo box
-            setSuccessMessage('SR Number updated successfully!');
+            setSuccessMessage('SR Number updated successfully!'); // Set success message
         } catch (err) {
-            setError(err.message);
+            setError(err.message); // Set error message if request fails
         }
     };
 
-    // function to update SalesForce CR field
+    // Function to update SalesForce CR field
     const handleUpdateSalesForceCR  = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default form submission
         if (!jql) {
-            setError('Please select a filter/query');
+            setError('Please select a filter/query'); // Set error if no filter/query is selected
             return;
         }
         if (!customfield_17687) {
-            setError('Please enter SalesForce CR.');
+            setError('Please enter SalesForce CR.'); // Set error if no SalesForce CR is entered
             return;
         }
-        setError(null);
+        setError(null); // Reset error state
         try {
+            // Make PUT request to update SalesForce CR
             const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tickets/updateSalesForceCR`, 
-                { customfield_17687: customfield_17687}, 
-                { params: { jql }, 
-                    headers: { 'Content-Type': 'application/json' } 
-                }
+                { customfield_17687: customfield_17687}, // Include SalesForce CR in request payload
+                { params: { jql }, // Include JQL query in request parameters
+                    headers: { 'Content-Type': 'application/json' } } // Set content type header
             );
-            console.log('SalesForce CR updated:', response.data);
-            setCustomfield_17687(''); // Clear the SalesForce CR input
+            console.log('SalesForce CR updated:', response.data); // Debugging line
+            setCustomfield_17687(''); // Clear the SalesForce CR input field
             setSelectedField(null); // Reset the selected field combo box
-            setSuccessMessage('SalesForce CR updated successfully!');
+            setSuccessMessage('SalesForce CR updated successfully!'); // Set success message
         } catch (err) {
-            setError(err.message);
+            setError(err.message); // Set error message if request fails
         }
     };
 
   return (
     <div className="ticket-list">
-        {/* <h1>Landslide Jira Management Automation System</h1> */}
         {/* Dropdown for filters & columns */}
         <div className='container1'>
             <Select
@@ -461,6 +469,7 @@ const ManualList = () => {
         </div>
         {successMessage && <p>{successMessage}</p>}
         {error && <p>Error: {error}</p>}
+
         {/* Table for columns by dropdown */}
         <table>
             <thead>
