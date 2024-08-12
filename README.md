@@ -5,8 +5,8 @@ Overview: Developed an internal Jira Ticket Management System to automate and st
 
 Technologies: React.js, Node.js, Express.js, Axios, Jira REST API, HTML, CSS, JSON
 
-Dynamic and Responsive UI: Implemented a user-friendly interface with React.js for fetching Jira tickets, updating key custom fields, and automating key actions with JQL queries.
-Backend Integration: Created a Node.js backend using Express.js to interact with Jira REST APIs for fetching and managing Jira tickets.
+- Dynamic and Responsive UI: Implemented a user-friendly interface with React.js for fetching Jira tickets, updating key custom fields, and automating key actions with JQL queries.
+- Backend Integration: Created a Node.js backend using Express.js to interact with Jira REST APIs for fetching and managing Jira tickets.
 
 Features:
 - Automation Actions: Implemented customized automation actions such as syncing SR/CR numbers from linked tickets, adding comments for missing primary components, and handling cloned defects, with logs updating history in real-time.
