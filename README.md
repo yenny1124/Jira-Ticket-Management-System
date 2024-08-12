@@ -2,6 +2,7 @@
 
 
 Project Name: Landslide Jira Management Automation
+
 Overview: Developed an internal Jira Ticket Management System to automate and streamline handling inconsistent/missing data in Jira tickets for the Spirent Landslide Engineering team.
 
 Technologies: React.js, Node.js, Express.js, Axios, Jira REST API, HTML, CSS, JSON
